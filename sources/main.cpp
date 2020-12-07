@@ -2,7 +2,6 @@
 #include <string>
 
 #include "brain/brain.h"
-
 #include "model/Model.hpp"
 #include "strategy/DebugInterface.hpp"
 #include "strategy/TcpStream.hpp"

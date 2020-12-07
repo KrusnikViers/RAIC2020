@@ -5,12 +5,12 @@
     "mode": "Space",
     "camera": {
       "center": {
-        "x": 32.851585,
-        "y": 17.545597
+        "x": 26.008186,
+        "y": 32.607643
       },
-      "rotation": -0.13071658,
-      "attack": 1.0586591,
-      "distance": 37.53069,
+      "rotation": -0.11248741,
+      "attack": 1.2305341,
+      "distance": 53.445568,
       "perspective": true
     }
   }

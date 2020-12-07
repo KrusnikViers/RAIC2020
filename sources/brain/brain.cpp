@@ -12,7 +12,7 @@ int dist(const Vec2Int& p1, const Vec2Int& p2) {
 
 Action Brain::update(const PlayerView& view, DebugInterface* debug) {
   view_ = &view;
-  maybeInit();
+  id_   = view_->myId;
   updateStored();
 
   Action result = Action(std::unordered_map<int, EntityAction>());
@@ -22,8 +22,8 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
 
     switch (entity.entityType) {
       case BUILDER_BASE: {
-        if (builders_count_ <= ranged_count_ + 5 &&
-            builders_count_ <= melee_count_ + 5) {
+        if (state.builders.now <= state.ranged.now + 5 &&
+            state.builders.now <= state.melee.now + 5) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(
@@ -38,7 +38,7 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
       }
 
       case MELEE_BASE: {
-        if (melee_count_ <= ranged_count_ + 3) {
+        if (state.melee.now <= state.ranged.now + 3) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(
@@ -161,15 +161,15 @@ const Entity* Brain::getNearest(Vec2Int pos, Brain::InternalType type,
 Vec2Int Brain::getNearestPlacing(Vec2Int position) {
   Vec2Int best_result(-1, -1);
   bool found = false;
-  for (size_t x = 2; x < map_.size() - 5; ++x)
-    for (size_t y = 2; y < map_.size() - 5; ++y) {
+  for (size_t x = 1; x < state.map().size() - 4; ++x)
+    for (size_t y = 1; y < state.map().size() - 4; ++y) {
       if (found && dist(Vec2Int(static_cast<int>(x), static_cast<int>(y)),
                         position) >= dist(best_result, position))
         continue;
       bool good = true;
-      for (int x_o = -2; x_o <= 5; ++x_o)
-        for (int y_o = -2; y_o <= 5; ++y_o) {
-          const Entity* cell = map_[x + x_o][y + y_o];
+      for (int x_o = -1; x_o <= 4; ++x_o)
+        for (int y_o = -1; y_o <= 4; ++y_o) {
+          const Entity* cell = state.map()[x + x_o][y + y_o];
           if (cell == nullptr) continue;
           if (cell->entityType == RESOURCE || cell->entityType == HOUSE ||
               cell->entityType == BUILDER_BASE ||
@@ -188,58 +188,26 @@ Vec2Int Brain::getNearestPlacing(Vec2Int position) {
 }
 
 void Brain::updateStored() {
-  std::unordered_set<int> entities_alive;
-  for (auto& row : map_) {
-    for (auto& cell : row) cell = nullptr;
-  }
-
-  ranged_count_ = melee_count_ = builders_count_ = 0;
-  int builder_met                                = -1;
-
-  for (const auto& entity : view_->entities) {
-    entities_alive.insert(entity.id);
-    map_[entity.position.x][entity.position.y] = &entity;
-    if (entity.entityType == HOUSE) {
-      for (size_t i = 0; i < 3; ++i)
-        for (size_t j = 0; j < 3; ++j)
-          map_[entity.position.x + i][entity.position.y + j] = &entity;
-    }
-    if (entity.entityType == BUILDER_BASE || entity.entityType == MELEE_BASE ||
-        entity.entityType == RANGED_BASE) {
-      for (size_t i = 0; i < 5; ++i)
-        for (size_t j = 0; j < 5; ++j)
-          map_[entity.position.x + i][entity.position.y + j] = &entity;
-    }
-
-    if (entity.playerId && *entity.playerId == id_) {
-      if (entity.entityType == BUILDER_UNIT) {
-        ++builders_count_;
-        builder_met = entity.id;
-      } else if (entity.entityType == RANGED_UNIT)
-        ++ranged_count_;
-      else if (entity.entityType == MELEE_UNIT)
-        ++melee_count_;
-    }
-  }
-
-  if (!entities_alive.count(builder_id_)) builder_id_ = builder_met;
-
+  state.update(*view_);
   for (auto it = assigned_.begin(); it != assigned_.end();) {
     auto current = it;
     it           = ++it;
-    if (!entities_alive.count(current->first) ||
-        !entities_alive.count(current->second)) {
+    if (!state.entities().count(current->first) ||
+        !state.entities().count(current->second)) {
       targeted_.erase(current->second);
       assigned_.erase(current);
     }
   }
-}
 
-void Brain::maybeInit() {
-  if (id_ != -1) return;
-  id_ = view_->myId;
-  map_.resize(view_->mapSize);
-  for (auto& row : map_) row.resize(view_->mapSize, nullptr);
+  if (!state.entities().count(builder_id_)) {
+    for (const auto& entity : state.entities()) {
+      if (entity.second->entityType == BUILDER_UNIT &&
+          *entity.second->playerId == id_) {
+        builder_id_ = entity.second->id;
+        break;
+      }
+    }
+  }
 }
 
 void Brain::debug(const PlayerView& playerView,
