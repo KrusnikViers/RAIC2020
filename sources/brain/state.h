@@ -10,12 +10,14 @@ class State {
   State() = default;
 
   void update(const PlayerView& view);
+  void debug(const PlayerView& playerView, DebugInterface& debugInterface);
 
   struct ChangingCounter {
     int now     = 0;
     int planned = 0;
   };
 
+  int id;
   ChangingCounter builders;
   ChangingCounter melee;
   ChangingCounter ranged;

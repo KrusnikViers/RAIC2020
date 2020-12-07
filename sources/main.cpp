@@ -38,7 +38,6 @@ class Runner {
       } else if (auto debugUpdateMessage =
                      std::dynamic_pointer_cast<ServerMessage::DebugUpdate>(
                          message)) {
-        brain.debug(debugUpdateMessage->playerView, debugInterface);
         ClientMessage::DebugUpdateDone().writeTo(*outputStream);
         outputStream->flush();
       }

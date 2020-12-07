@@ -1,5 +1,7 @@
 #include "brain/state.h"
 
+#include "model/DebugCommand.hpp"
+
 void State::update(const PlayerView& view) {
   // Prepare containers
   if (map_.empty()) {
@@ -8,6 +10,7 @@ void State::update(const PlayerView& view) {
   }
 
   // Reset storage
+  id = view.myId;
   for (auto& row : map_)
     for (auto& cell : row) cell = nullptr;
   entities_.clear();
@@ -17,8 +20,6 @@ void State::update(const PlayerView& view) {
   supply.now = supply.planned = 0;
 
   // Refill storage
-  const int my_id = view.myId;
-
   for (const auto& player : view.players) {
     if (player.id == my_id) {
       resource = player.resource;
