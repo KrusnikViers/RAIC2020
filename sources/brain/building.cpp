@@ -28,7 +28,7 @@ void BuildingPlanner::update(const PlayerView& view, State& state) {
   repairBuildings(state, state.bases);
 
   if (state.supply_used >= (state.supply_now + state.supply_building) * 0.8 &&
-      state.resource >= (state.props.at(HOUSE).initialCost + 120)) {
+      state.resource >= (state.props.at(HOUSE).initialCost + 100)) {
     build(state, HOUSE);
   }
 

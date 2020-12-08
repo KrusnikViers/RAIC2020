@@ -14,7 +14,8 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
       case BUILDER_BASE: {
         if ((state_.supply_now < 20 && state_.drones.size() < 8) ||
             (state_.drones.size() < state_.supply_now * 0.66 &&
-             state_.resource < 100 && !fighting_.danger())) {
+             state_.drones.size() < 50 && state_.resource < 200 &&
+             !fighting_.danger())) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(
@@ -30,7 +31,9 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
 
       case MELEE_BASE: {
         if (fighting_.danger() || !fighting_.full_guard() ||
-            state_.resource - (state_.props.at(MELEE_UNIT).initialCost + state_.melees.size()) >= 200) {
+            state_.resource - (state_.props.at(MELEE_UNIT).initialCost +
+                               state_.melees.size()) >=
+                200) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(
@@ -47,7 +50,8 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
       case RANGED_BASE: {
         if (fighting_.danger() || !fighting_.full_guard() ||
             state_.resource - (state_.props.at(MELEE_UNIT).initialCost +
-                            state_.melees.size()) >= 200) {
+                               state_.melees.size()) >=
+                200) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(
