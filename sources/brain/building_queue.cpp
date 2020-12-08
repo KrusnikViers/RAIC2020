@@ -5,14 +5,11 @@ void BuildingQueue::update(const PlayerView& view, const State& state) {
   digging_.clear();
   building_.clear();
   if (waiting_) {
-    const Entity* entity = state.map()[waiting_->pos.x][waiting_->pos.y];
+    const Entity* entity = state.map[waiting_->pos.x][waiting_->pos.y];
     if (entity && !view.entityProperties.at(entity->entityType).canMove) {
       waiting_ = nullptr;
     }
   }
-
-  for (const auto& entity : state.entities()) {
-    if (!entity.second->playerId || *entity.second->playerId != state.)
 }
 
 void BuildingQueue::enqueue(const PlayerView& view, const State& state,

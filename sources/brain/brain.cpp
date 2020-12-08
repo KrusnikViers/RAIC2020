@@ -21,8 +21,8 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
 
     switch (entity.entityType) {
       case BUILDER_BASE: {
-        if (state_.builders.now <= state_.ranged.now + 5 &&
-            state_.builders.now <= state_.melee.now + 5) {
+        if (state_.drones.size() <= state_.ranged.size() + 5 &&
+            state_.drones.size() <= state_.melees.size() + 5) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(
@@ -37,7 +37,7 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
       }
 
       case MELEE_BASE: {
-        if (state_.melee.now <= state_.ranged.now + 3) {
+        if (state_.melees.size() <= state_.ranged.size() + 3) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(

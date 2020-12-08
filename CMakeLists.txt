@@ -1,9 +1,18 @@
 cmake_minimum_required(VERSION 3.5)
 project(aicup2020)
 
-file (GLOB HEADERS "sources/**/*.h" "sources/**/*.hpp")
-file (GLOB SOURCES "sources/**/*.cpp")
-add_executable(aicup2020 ${HEADERS} ${SOURCES} sources/main.cpp)
+file (GLOB HEADERS "sources/strategy/*.hpp" "sources/model/*.hpp")
+file (GLOB SOURCES "sources/strategy/*.cpp" "sources/model/*.cpp")
+SET (MY_SOURCES 
+    "sources/main.cpp"
+    "sources/brain/brain.cpp"
+    "sources/brain/brain.h"
+    "sources/brain/building_queue.cpp"
+    "sources/brain/building_queue.h"
+    "sources/brain/state.cpp"
+    "sources/brain/state.h"
+)
+add_executable(aicup2020 ${HEADERS} ${SOURCES} ${MY_SOURCES})
 target_include_directories(aicup2020 PRIVATE sources)
 
 if (DEFINED LOCAL_BUILD)

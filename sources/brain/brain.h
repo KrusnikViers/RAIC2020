@@ -10,8 +10,6 @@
 
 class Brain {
  public:
-  Brain() = default;
-
   Action update(const PlayerView& playerView, DebugInterface* debugInterface);
   const Entity* getNearestEnemy(Vec2Int position);
 

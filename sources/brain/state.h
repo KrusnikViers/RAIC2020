@@ -7,31 +7,27 @@
 
 class State {
  public:
-  State() = default;
+  typedef std::vector<const Entity*> EntityList;
+  typedef std::unordered_map<int, const Entity*> EntityMap;
 
   void update(const PlayerView& view);
-  void debug(const PlayerView& playerView, DebugInterface& debugInterface);
-
-  struct ChangingCounter {
-    int now     = 0;
-    int planned = 0;
-  };
 
   int id;
-  ChangingCounter builders;
-  ChangingCounter melee;
-  ChangingCounter ranged;
-  ChangingCounter supply;
+  EntityList drones;
+  EntityList melees;
+  EntityList ranged;
+  EntityList bases;
+  EntityList m_barracks;
+  EntityList r_barracks;
+  EntityList turrets;
+  EntityList enemies;
+  EntityList resources;
+
   int resource;
+  int supply_used;
+  int supply_now;
+  int supply_building;
 
-  const std::vector<std::vector<const Entity*>>& map() const { return map_; }
-  const std::unordered_map<int, const Entity*>& entities() const {
-    return entities_;
-  }
-
- private:
-  void fillMap(Vec2Int point, int size, const Entity* entity);
-
-  std::vector<std::vector<const Entity*>> map_;
-  std::unordered_map<int, const Entity*> entities_;
+  std::vector<std::vector<const Entity*>> map;
+  EntityMap all;
 };

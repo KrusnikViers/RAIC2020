@@ -4,60 +4,77 @@
 
 void State::update(const PlayerView& view) {
   // Prepare containers
-  if (map_.empty()) {
-    map_.resize(view.mapSize);
-    for (auto& row : map_) row.resize(view.mapSize);
+  if (map.empty()) {
+    map.resize(view.mapSize);
+    for (auto& row : map) row.resize(view.mapSize);
   }
 
   // Reset storage
   id = view.myId;
-  for (auto& row : map_)
+  for (auto& row : map)
     for (auto& cell : row) cell = nullptr;
-  entities_.clear();
-  builders.now = builders.planned = 0;
-  melee.now = melee.planned = 0;
-  ranged.now = ranged.planned = 0;
-  supply.now = supply.planned = 0;
+
+  all.clear();
+  drones.clear();
+  melees.clear();
+  ranged.clear();
+  bases.clear();
+  m_barracks.clear();
+  r_barracks.clear();
+  turrets.clear();
+  enemies.clear();
+  resources.clear();
+  resource = supply_now = supply_building = 0;
 
   // Refill storage
   for (const auto& player : view.players) {
-    if (player.id == my_id) {
+    if (player.id == id) {
       resource = player.resource;
       break;
     }
   }
 
   for (const auto& entity : view.entities) {
-    entities_[entity.id] = &entity;
-    fillMap(entity.position, view.entityProperties.at(entity.entityType).size,
-            &entity);
-    if (!entity.playerId || *entity.playerId != my_id) continue;
-    switch (entity.entityType) {
-      case BUILDER_BASE:
-      case MELEE_BASE:
-      case RANGED_BASE:
-      case HOUSE:
-        (entity.active ? supply.now : supply.planned) +=
-            view.entityProperties.at(entity.entityType).populationProvide;
-        break;
+    all[entity.id] = &entity;
 
-      case BUILDER_UNIT:
-        ++builders.now;
-        break;
-
-      case MELEE_UNIT:
-        ++melee.now;
-        break;
-
-      case RANGED_UNIT:
-        ++ranged.now;
-        break;
+    const int entity_size = view.entityProperties.at(entity.entityType).size;
+    for (int i = 0; i < entity_size; ++i) {
+      for (int j = 0; j < entity_size; ++j)
+        map[entity.position.x + i][entity.position.y + j] = &entity;
     }
-  }
-}
 
-void State::fillMap(Vec2Int point, int size, const Entity* entity) {
-  for (int i = 0; i < size; ++i) {
-    for (int j = 0; j < size; ++j) map_[point.x + i][point.y + j] = entity;
+    if (entity.entityType == RESOURCE) {
+      resources.push_back(&entity);
+    } else if (*entity.playerId != id) {
+      enemies.push_back(&entity);
+    } else {
+      switch (entity.entityType) {
+        case BUILDER_UNIT:
+          drones.push_back(&entity);
+          break;
+        case MELEE_UNIT:
+          melees.push_back(&entity);
+          break;
+        case RANGED_UNIT:
+          ranged.push_back(&entity);
+          break;
+        case MELEE_BASE:
+          m_barracks.push_back(&entity);
+          break;
+        case RANGED_BASE:
+          r_barracks.push_back(&entity);
+          break;
+        case BUILDER_BASE:
+          bases.push_back(&entity);
+          break;
+        case TURRET:
+          turrets.push_back(&entity);
+          break;
+      }
+    }
+
+    supply_used += view.entityProperties.at(entity.entityType).populationUse;
+    (entity.active ? supply_now : supply_building) +=
+        view.entityProperties.at(entity.entityType).populationProvide;
   }
 }
