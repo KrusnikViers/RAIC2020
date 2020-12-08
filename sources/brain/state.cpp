@@ -8,6 +8,7 @@ void State::update(const PlayerView& view) {
     map.resize(view.mapSize);
     for (auto& row : map) row.resize(view.mapSize);
   }
+  if (props.empty()) props = view.entityProperties;
 
   // Reset storage
   id = view.myId;
@@ -18,13 +19,15 @@ void State::update(const PlayerView& view) {
   drones.clear();
   melees.clear();
   ranged.clear();
+  supplies.clear();
   bases.clear();
   m_barracks.clear();
   r_barracks.clear();
   turrets.clear();
   enemies.clear();
   resources.clear();
-  resource = resource_planned = supply_now = supply_building = 0;
+
+  resource = resource_planned = supply_used = supply_now = supply_building = 0;
 
   // Refill storage
   for (const auto& player : view.players) {
@@ -37,7 +40,7 @@ void State::update(const PlayerView& view) {
   for (const auto& entity : view.entities) {
     all[entity.id] = &entity;
 
-    const int entity_size = view.entityProperties.at(entity.entityType).size;
+    const int entity_size = props.at(entity.entityType).size;
     for (int i = 0; i < entity_size; ++i) {
       for (int j = 0; j < entity_size; ++j)
         map[entity.position.x + i][entity.position.y + j] = &entity;
@@ -67,14 +70,17 @@ void State::update(const PlayerView& view) {
         case BUILDER_BASE:
           bases.push_back(&entity);
           break;
+        case HOUSE:
+          supplies.push_back(&entity);
+          break;
         case TURRET:
           turrets.push_back(&entity);
           break;
       }
-    }
 
-    supply_used += view.entityProperties.at(entity.entityType).populationUse;
-    (entity.active ? supply_now : supply_building) +=
-        view.entityProperties.at(entity.entityType).populationProvide;
+      supply_used += props.at(entity.entityType).populationUse;
+      (entity.active ? supply_now : supply_building) +=
+          props.at(entity.entityType).populationProvide;
+    }
   }
 }

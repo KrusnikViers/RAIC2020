@@ -1,13 +1,5 @@
 #include "brain/brain.h"
 
-namespace {
-
-int dist(const Vec2Int& p1, const Vec2Int& p2) {
-  return std::abs(p1.x - p2.x) + std::abs(p1.y - p2.y);
-}
-
-}  // namespace
-
 Action Brain::update(const PlayerView& view, DebugInterface* debug) {
   view_ = &view;
   id_   = view_->myId;
@@ -22,8 +14,9 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
 
     switch (entity.entityType) {
       case BUILDER_BASE: {
-        if (state_.drones.size() <= state_.ranged.size() + 5 &&
-            state_.drones.size() <= state_.melees.size() + 5) {
+        if ((state_.supply_now < 20 && state_.drones.size() < 8) ||
+            (state_.drones.size() < state_.supply_now / 2 &&
+             state_.resource < 100)) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(
@@ -63,7 +56,7 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
       }
 
       case BUILDER_UNIT:
-        result.entityActions[entity.id] = building_.command(&entity);
+        result.entityActions[entity.id] = building_.command(state_, &entity);
         break;
 
       case RANGED_UNIT:

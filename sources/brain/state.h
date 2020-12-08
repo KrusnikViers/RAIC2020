@@ -16,6 +16,7 @@ class State {
   EntityList drones;
   EntityList melees;
   EntityList ranged;
+  EntityList supplies;
   EntityList bases;
   EntityList m_barracks;
   EntityList r_barracks;
@@ -30,5 +31,6 @@ class State {
   int supply_building;
 
   std::vector<std::vector<const Entity*>> map;
+  std::unordered_map<EntityType, EntityProperties> props;
   EntityMap all;
 };
