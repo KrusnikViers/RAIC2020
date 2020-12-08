@@ -7,8 +7,10 @@ SET (MY_SOURCES
     "sources/main.cpp"
     "sources/brain/brain.cpp"
     "sources/brain/brain.h"
-    "sources/brain/building_queue.cpp"
-    "sources/brain/building_queue.h"
+    "sources/brain/building.cpp"
+    "sources/brain/building.h"
+    "sources/brain/fighting.cpp"
+    "sources/brain/fighting.h"
     "sources/brain/state.cpp"
     "sources/brain/state.h"
 )

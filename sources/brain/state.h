@@ -24,6 +24,7 @@ class State {
   EntityList resources;
 
   int resource;
+  int resource_planned;
   int supply_used;
   int supply_now;
   int supply_building;

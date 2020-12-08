@@ -24,7 +24,7 @@ void State::update(const PlayerView& view) {
   turrets.clear();
   enemies.clear();
   resources.clear();
-  resource = supply_now = supply_building = 0;
+  resource = resource_planned = supply_now = supply_building = 0;
 
   // Refill storage
   for (const auto& player : view.players) {

@@ -1,21 +1,10 @@
-#include "brain/building_queue.h"
+#include "brain/building.h"
 
-void BuildingQueue::update(const PlayerView& view, const State& state) {
-  being_digged_.clear();
-  digging_.clear();
-  building_.clear();
-  if (waiting_) {
-    const Entity* entity = state.map[waiting_->pos.x][waiting_->pos.y];
-    if (entity && !view.entityProperties.at(entity->entityType).canMove) {
-      waiting_ = nullptr;
-    }
-  }
+void BuildingPlanner::update(const PlayerView& view, State& state) {
+  commands_.clear();
 }
 
-void BuildingQueue::enqueue(const PlayerView& view, const State& state,
-                            EntityType type) {}
-
-EntityAction BuildingQueue::commandsForBuilder(const Entity* entity) {
+EntityAction BuildingPlanner::command(const Entity* entity) {
   return EntityAction();
 }
 

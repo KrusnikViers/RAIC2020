@@ -12,7 +12,8 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
   view_ = &view;
   id_   = view_->myId;
   state_.update(*view_);
-  building_queue_.update(view, state_);
+  building_.update(view, state_);
+  fighting_.update(view, state_);
 
   Action result = Action(std::unordered_map<int, EntityAction>());
 
@@ -62,8 +63,7 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
       }
 
       case BUILDER_UNIT:
-        result.entityActions[entity.id] =
-            building_queue_.commandsForBuilder(&entity);
+        result.entityActions[entity.id] = building_.command(&entity);
         break;
 
       case RANGED_UNIT:

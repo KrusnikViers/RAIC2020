@@ -3,7 +3,8 @@
 #include <map>
 #include <unordered_set>
 
-#include "brain/building_queue.h"
+#include "brain/building.h"
+#include "brain/fighting.h"
 #include "brain/state.h"
 #include "model/Model.hpp"
 #include "strategy/DebugInterface.hpp"
@@ -19,5 +20,6 @@ class Brain {
   const PlayerView* view_ = nullptr;
 
   State state_;
-  BuildingQueue building_queue_;
+  BuildingPlanner building_;
+  FightingPlanner fighting_;
 };
