@@ -1,22 +1,20 @@
 #include "brain/brain.h"
 
 Action Brain::update(const PlayerView& view, DebugInterface* debug) {
-  view_ = &view;
-  id_   = view_->myId;
-  state_.update(*view_);
+  state_.update(view);
   building_.update(view, state_);
   fighting_.update(view, state_);
 
   Action result = Action(std::unordered_map<int, EntityAction>());
 
   for (const auto& entity : view.entities) {
-    if (!entity.playerId || *entity.playerId != id_) continue;
+    if (!entity.playerId || *entity.playerId != state_.id) continue;
 
     switch (entity.entityType) {
       case BUILDER_BASE: {
         if ((state_.supply_now < 20 && state_.drones.size() < 8) ||
-            (state_.drones.size() < state_.supply_now / 2 &&
-             state_.resource < 100)) {
+            (state_.drones.size() < state_.supply_now * 0.66 &&
+             state_.resource < 100 && !fighting_.danger())) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(
@@ -31,7 +29,8 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
       }
 
       case MELEE_BASE: {
-        if (state_.melees.size() <= state_.ranged.size() + 3) {
+        if (fighting_.danger() || !fighting_.full_guard() ||
+            state_.resource - (state_.props.at(MELEE_UNIT).initialCost + state_.melees.size()) >= 200) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(
@@ -46,12 +45,19 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
       }
 
       case RANGED_BASE: {
-        result.entityActions[entity.id] = EntityAction(
-            nullptr,
-            std::make_shared<BuildAction>(
-                RANGED_UNIT,
-                Vec2Int(entity.position.x + 5, entity.position.y + 4)),
-            nullptr, nullptr);
+        if (fighting_.danger() || !fighting_.full_guard() ||
+            state_.resource - (state_.props.at(MELEE_UNIT).initialCost +
+                            state_.melees.size()) >= 200) {
+          result.entityActions[entity.id] = EntityAction(
+              nullptr,
+              std::make_shared<BuildAction>(
+                  RANGED_UNIT,
+                  Vec2Int(entity.position.x + 5, entity.position.y + 4)),
+              nullptr, nullptr);
+        } else {
+          result.entityActions[entity.id] =
+              EntityAction(nullptr, nullptr, nullptr, nullptr);
+        }
         break;
       }
 
@@ -60,38 +66,11 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
         break;
 
       case RANGED_UNIT:
-      case MELEE_UNIT: {
-        const auto* nearest_enemy = getNearestEnemy(entity.position);
-        if (nearest_enemy) {
-          result.entityActions[entity.id] = EntityAction(
-              std::make_shared<MoveAction>(nearest_enemy->position, true, true),
-              nullptr,
-              std::make_shared<AttackAction>(
-                  std::make_shared<int>(nearest_enemy->id), nullptr),
-              nullptr);
-        }
+      case MELEE_UNIT:
+        result.entityActions[entity.id] = fighting_.command(state_, &entity);
         break;
-      }
     }
   }
 
   return result;
-}
-
-const Entity* Brain::getNearestEnemy(Vec2Int pos) {
-  bool found         = false;
-  const Entity* best = nullptr;
-  int best_distance  = 0;
-  for (const auto& entity : view_->entities) {
-    if (entity.entityType == RESOURCE) continue;
-    if (*entity.playerId == id_) continue;
-
-    const int current_distance = dist(entity.position, pos);
-    if (!found || current_distance < best_distance) {
-      best_distance = current_distance;
-      best          = &entity;
-      found         = true;
-    }
-  }
-  return best;
 }

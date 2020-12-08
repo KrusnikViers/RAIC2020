@@ -12,13 +12,8 @@
 class Brain {
  public:
   Action update(const PlayerView& playerView, DebugInterface* debugInterface);
-  const Entity* getNearestEnemy(Vec2Int position);
 
  private:
-  int id_ = -1;
-
-  const PlayerView* view_ = nullptr;
-
   State state_;
   BuildingPlanner building_;
   FightingPlanner fighting_;

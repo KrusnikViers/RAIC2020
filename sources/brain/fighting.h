@@ -9,5 +9,28 @@
 class FightingPlanner {
  public:
   void update(const PlayerView& view, State& state);
-  EntityAction command(const Entity* entity);
+  EntityAction command(const State& state, const Entity* entity);
+
+  bool danger() const { return danger_; }
+  bool full_guard() const { return full_guard_; }
+
+  enum ThreatClass { Neutral, Approach, Threat, Attack };
+
+ private:
+  void fillHeatMap(const State& state, State::EntityList list);
+  const Entity* getNearestEnemy(const State& state, const Entity* unit,
+                                bool guard);
+  Vec2Int getBestGuardPosition(const State& state, const Entity* unit);
+
+  std::unordered_map<int, const Entity*> assault_;
+  std::unordered_map<int, const Entity*> guard_;
+
+  std::unordered_map<int, Vec2Int> guard_posts_;
+
+  std::vector<std::vector<ThreatClass>> heatmap_;
+  std::unordered_map<int, const Entity*> attackers_;
+  std::unordered_map<int, const Entity*> targeted_;
+
+  bool danger_;
+  bool full_guard_;
 };

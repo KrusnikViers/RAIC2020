@@ -23,6 +23,7 @@ class State {
   EntityList turrets;
   EntityList enemies;
   EntityList resources;
+  EntityList battle_units;
 
   int resource;
   int resource_planned;

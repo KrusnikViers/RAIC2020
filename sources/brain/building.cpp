@@ -16,19 +16,9 @@ bool isFree(const State& state, const Vec2Int& pos, bool or_drone = true) {
                                *entity->playerId == state.id);
 }
 
-std::string cts(const Vec2Int& pos) {
-  return std::to_string(pos.x) + "x" + std::to_string(pos.y);
-}
-
-std::string dts(const Entity* entity) {
-  return "Drone#" + std::to_string(entity->id) + "[" + cts(entity->position) +
-         "]: ";
-}
-
 }  // namespace
 
 void BuildingPlanner::update(const PlayerView& view, State& state) {
-  std::cout << "-----" << std::endl;
   commands_.clear();
   move_away_.clear();
 
@@ -37,8 +27,8 @@ void BuildingPlanner::update(const PlayerView& view, State& state) {
   repairBuildings(state, state.r_barracks);
   repairBuildings(state, state.bases);
 
-  if (state.supply_used >= (state.supply_now + state.supply_building) * 0.85 &&
-      state.resource >= (state.props.at(HOUSE).initialCost * 2)) {
+  if (state.supply_used >= (state.supply_now + state.supply_building) * 0.8 &&
+      state.resource >= (state.props.at(HOUSE).initialCost + 120)) {
     build(state, HOUSE);
   }
 
@@ -63,8 +53,6 @@ EntityAction BuildingPlanner::command(const State& state,
       best_move   = new_pos;
     }
     if (best_result != -1) {
-      std::cout << dts(entity) << " Move away to " << cts(best_move)
-                << std::endl;
       return EntityAction(std::make_shared<MoveAction>(best_move, false, false),
                           nullptr, nullptr, nullptr);
     }
@@ -77,21 +65,17 @@ EntityAction BuildingPlanner::command(const State& state,
     const Entity* target = state.map[command.pos.x][command.pos.y];
 
     if (command.type == RESOURCE) {
-      std::cout << dts(entity) << " Dig at " << cts(command.pos) << std::endl;
       return EntityAction(std::make_shared<MoveAction>(command.pos, true, true),
                           nullptr,
                           std::make_shared<AttackAction>(
                               std::make_shared<int>(target->id), nullptr),
                           nullptr);
     } else if (!target || target->entityType != command.type) {
-      std::cout << dts(entity) << " Build at " << cts(command.pos) << std::endl;
       return EntityAction(
           std::make_shared<MoveAction>(center, true, true),
           std::make_shared<BuildAction>(command.type, command.pos), nullptr,
           nullptr);
     } else {
-      std::cout << dts(entity) << " Repair at " << cts(command.pos)
-                << std::endl;
       return EntityAction(std::make_shared<MoveAction>(center, true, true),
                           nullptr, nullptr,
                           std::make_shared<RepairAction>(target->id));
@@ -212,7 +196,19 @@ Vec2Int BuildingPlanner::nearestFreeResource(
   Vec2Int best_result(-1, -1);
   for (const auto* resource : state.resources) {
     if (taken_resources.count(resource->id)) continue;
-    int cur_dist = dist(resource->position, pos) + std::max(resource->position.x, resource->position.y) / 2;
+    int cur_dist = dist(resource->position, pos) +
+                   std::max(resource->position.x, resource->position.y) / 2;
+
+    for (const auto* entity : state.enemies) {
+      if (entity->entityType == MELEE_UNIT ||
+          entity->entityType == RANGED_UNIT) {
+        if (dist(entity->position, pos) < 7) {
+          cur_dist += static_cast<int>(state.map.size());
+          break;
+        }
+      }
+    }
+
     if (best_distance != -1 && cur_dist >= best_distance) continue;
     if (dist(resource->position, pos) == 1) return resource->position;
     if (!isFree(state, Vec2Int(resource->position.x + 1, resource->position.y),
