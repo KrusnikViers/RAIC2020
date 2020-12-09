@@ -2,3 +2,5 @@
 out/
 aicup2020_sources.zip
 runner/*.json
+runner/*.exe
+runner/*.bat
