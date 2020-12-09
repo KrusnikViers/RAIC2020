@@ -4,21 +4,18 @@
 
 namespace {
 
-const int kApproachDistance = 25;
+const int kApproachDistance = 15;
 const int kThreatDistance   = 10;
 const int kAttackDistance   = 5;
-
-const int kEnoughForAssault = 15;
-const int kEnoughForGuard   = 5;
 
 int getGuardFine(FightingPlanner::ThreatClass threat) {
   switch (threat) {
     case FightingPlanner::Attack:
       return 3;
     case FightingPlanner::Threat:
-      return 2;
-    case FightingPlanner::Approach:
       return 1;
+    case FightingPlanner::Approach:
+      return 2;
     default:
       return 4;
   }
@@ -71,25 +68,15 @@ void FightingPlanner::update(const PlayerView& view, State& state) {
       guard_[unit->id] = unit;
   }
 
-  // Backing off assault to guard, if needed
-  danger_ = (guard_.size() < attackers_.size() + 2);
-  //while (guard_.size() < attackers_.size() && !assault_.empty()) {
-  //  auto it = assault_.begin();
-  //  guard_.insert(*it);
-  //  assault_.erase(it);
-  //}
-
   // If we're not under attack - initiate assault on my own.
-  const int min_guard  = kEnoughForGuard;
-  const int guard_size = static_cast<int>(guard_.size());
-  if (attackers_.empty() && guard_size - min_guard > kEnoughForAssault) {
-    while (guard_.size() > min_guard) {
+  const int guard_size        = static_cast<int>(guard_.size());
+  const int kEnoughForAssault = 15;
+  if (guard_size > kEnoughForAssault) {
+    while (!guard_.empty()) {
       assault_[guard_.begin()->first] = guard_.begin()->second;
       guard_.erase(guard_.begin());
     }
   }
-
-  full_guard_ = (guard_.size() > attackers_.size() && guard_size > min_guard);
 }
 
 EntityAction FightingPlanner::command(const State& state,
@@ -130,9 +117,7 @@ const Entity* FightingPlanner::getNearestEnemy(const State& state,
   for (const auto* enemy : state.enemies) {
     if (guard && !attackers_.empty() && !attackers_.count(enemy->id)) continue;
     int score = dist(unit->position, enemy->position) -
-                static_cast<int>(heatmap_[enemy->position.x][enemy->position.y]) * 5 -
-                (state.props.at(enemy->entityType).attack ? 5 : 0) -
-                (targeted_.count(enemy->id) ? 0 : 0);
+                (state.props.at(enemy->entityType).attack ? 5 : 0);
     if (!found || score < best_score) {
       found      = true;
       best_score = score;
@@ -169,7 +154,7 @@ Vec2Int FightingPlanner::getBestGuardPosition(const State& state,
       if (!free_post) continue;
       int area  = getGuardFine(heatmap_[i][j]);
       int score = std::lround(remoteness(Vec2Int(i, j)));
-      if (area < best_area || (area == best_area && score < best_result)) {
+      if (area < best_area || (area == best_area && score > best_result)) {
         result                 = Vec2Int(i, j);
         guard_posts_[unit->id] = result;
         best_area              = area;
@@ -183,9 +168,9 @@ Vec2Int FightingPlanner::getBestGuardPosition(const State& state,
 
 void FightingPlanner::fillHeatMap(const State& state, State::EntityList list) {
   if (list.empty()) return;
-  const int size     = state.props.at(list[0]->entityType).size;
+  const int size       = state.props.at(list[0]->entityType).size;
   const bool is_worker = list[0]->entityType == BUILDER_UNIT;
-  const int map_size = static_cast<int>(state.map.size());
+  const int map_size   = static_cast<int>(state.map.size());
 
   for (const auto* entity : list) {
     Vec2Int center(entity->position.x + size / 2,
@@ -202,8 +187,7 @@ void FightingPlanner::fillHeatMap(const State& state, State::EntityList list) {
         int distance = std::lround(r_dist(Vec2Int(i, j), center) - size / 2);
 
         if (is_worker) {
-          if (distance <= kAttackDistance)
-            threat = Approach;
+          if (distance <= kAttackDistance) threat = Approach;
         } else if (distance <= kAttackDistance)
           threat = Attack;
         else if (distance <= kThreatDistance)

@@ -11,9 +11,6 @@ class FightingPlanner {
   void update(const PlayerView& view, State& state);
   EntityAction command(const State& state, const Entity* entity);
 
-  bool danger() const { return danger_; }
-  bool full_guard() const { return full_guard_; }
-
   enum ThreatClass { Neutral, Approach, Threat, Attack };
 
  private:
@@ -30,7 +27,4 @@ class FightingPlanner {
   std::vector<std::vector<ThreatClass>> heatmap_;
   std::unordered_map<int, const Entity*> attackers_;
   std::unordered_map<int, const Entity*> targeted_;
-
-  bool danger_;
-  bool full_guard_;
 };

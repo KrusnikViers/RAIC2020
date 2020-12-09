@@ -28,7 +28,7 @@ void BuildingPlanner::update(const PlayerView& view, State& state) {
   repairBuildings(state, state.bases);
 
   if (state.supply_used >= (state.supply_now + state.supply_building) * 0.8 &&
-      state.resource >= (state.props.at(HOUSE).initialCost + 100)) {
+      state.resource >= 100) {
     build(state, HOUSE);
   }
 
@@ -202,8 +202,8 @@ Vec2Int BuildingPlanner::nearestFreeResource(
     for (const auto* entity : state.enemies) {
       if (entity->entityType == MELEE_UNIT ||
           entity->entityType == RANGED_UNIT) {
-        if (dist(entity->position, pos) < 7) {
-          cur_dist += static_cast<int>(state.map.size());
+        if (dist(entity->position, pos) < 10) {
+          cur_dist += 20;
           break;
         }
       }
