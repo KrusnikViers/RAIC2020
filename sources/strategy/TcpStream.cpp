@@ -71,7 +71,8 @@ public:
             RECV_SEND_T received = recv(tcpStream->sock, this->buffer + bufferPos + bufferSize,
               static_cast<int>(BUFFER_CAPACITY - bufferPos - bufferSize), 0);
             if (received < 0) {
-                throw std::runtime_error("Failed to read from socket");
+                exit(0);
+                //throw std::runtime_error("Failed to read from socket");
             }
             bufferSize += received;
         }

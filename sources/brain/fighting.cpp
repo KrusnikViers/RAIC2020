@@ -10,12 +10,12 @@ const int kAttackDistance   = 5;
 
 int getGuardFine(FightingPlanner::ThreatClass threat) {
   switch (threat) {
-    case FightingPlanner::Attack:
-      return 3;
     case FightingPlanner::Threat:
       return 1;
     case FightingPlanner::Approach:
       return 2;
+    case FightingPlanner::Attack:
+      return 3;
     default:
       return 4;
   }
@@ -24,6 +24,8 @@ int getGuardFine(FightingPlanner::ThreatClass threat) {
 }  // namespace
 
 void FightingPlanner::update(const PlayerView& view, State& state) {
+  state_ = &state;
+
   // Update moving state
   for (auto it = guard_.begin(); it != guard_.end();) {
     auto cur = it++;
@@ -48,12 +50,12 @@ void FightingPlanner::update(const PlayerView& view, State& state) {
   }
   for (auto& row : heatmap_)
     for (auto& cell : row) cell = Neutral;
-  fillHeatMap(state, state.bases);
-  fillHeatMap(state, state.m_barracks);
-  fillHeatMap(state, state.r_barracks);
-  fillHeatMap(state, state.supplies);
-  fillHeatMap(state, state.turrets);
-  fillHeatMap(state, state.drones);
+  fillHeatMap(state.bases);
+  fillHeatMap(state.m_barracks);
+  fillHeatMap(state.r_barracks);
+  fillHeatMap(state.supplies);
+  fillHeatMap(state.turrets);
+  fillHeatMap(state.drones);
 
   attackers_.clear();
   for (const auto* enemy : state.enemies) {
@@ -70,7 +72,7 @@ void FightingPlanner::update(const PlayerView& view, State& state) {
 
   // If we're not under attack - initiate assault on my own.
   const int guard_size        = static_cast<int>(guard_.size());
-  const int kEnoughForAssault = 15;
+  const int kEnoughForAssault = 40;
   if (guard_size > kEnoughForAssault) {
     while (!guard_.empty()) {
       assault_[guard_.begin()->first] = guard_.begin()->second;
@@ -79,10 +81,9 @@ void FightingPlanner::update(const PlayerView& view, State& state) {
   }
 }
 
-EntityAction FightingPlanner::command(const State& state,
-                                      const Entity* entity) {
+EntityAction FightingPlanner::command(const Entity* entity) {
   if (assault_.count(entity->id)) {
-    const Entity* enemy = getNearestEnemy(state, entity, false);
+    const Entity* enemy = getNearestEnemy(entity, false);
     if (!enemy) return EntityAction(nullptr, nullptr, nullptr, nullptr);
     targeted_[enemy->id] = enemy;
     return EntityAction(
@@ -92,7 +93,7 @@ EntityAction FightingPlanner::command(const State& state,
         nullptr);
   } else if (!attackers_.empty()) {
     guard_posts_.clear();
-    const Entity* enemy = getNearestEnemy(state, entity, true);
+    const Entity* enemy = getNearestEnemy(entity, true);
     if (!enemy) return EntityAction(nullptr, nullptr, nullptr, nullptr);
     targeted_[enemy->id] = enemy;
     return EntityAction(
@@ -101,7 +102,7 @@ EntityAction FightingPlanner::command(const State& state,
                                        nullptr),
         nullptr);
   } else {
-    Vec2Int new_pos = getBestGuardPosition(state, entity);
+    Vec2Int new_pos = getBestGuardPosition(entity);
     if (new_pos == entity->position)
       return EntityAction(nullptr, nullptr, nullptr, nullptr);
     return EntityAction(std::make_shared<MoveAction>(new_pos, true, true),
@@ -109,15 +110,13 @@ EntityAction FightingPlanner::command(const State& state,
   }
 }
 
-const Entity* FightingPlanner::getNearestEnemy(const State& state,
-                                               const Entity* unit, bool guard) {
+const Entity* FightingPlanner::getNearestEnemy(const Entity* unit, bool guard) {
   const Entity* result = nullptr;
   int best_score       = 0;
   bool found           = false;
-  for (const auto* enemy : state.enemies) {
+  for (const auto* enemy : state_->enemies) {
     if (guard && !attackers_.empty() && !attackers_.count(enemy->id)) continue;
-    int score = dist(unit->position, enemy->position) -
-                (state.props.at(enemy->entityType).attack ? 5 : 0);
+    int score = std::lround(r_dist(unit->position, enemy->position));
     if (!found || score < best_score) {
       found      = true;
       best_score = score;
@@ -127,12 +126,11 @@ const Entity* FightingPlanner::getNearestEnemy(const State& state,
   return result;
 }
 
-Vec2Int FightingPlanner::getBestGuardPosition(const State& state,
-                                              const Entity* unit) {
+Vec2Int FightingPlanner::getBestGuardPosition(const Entity* unit) {
   if (guard_posts_.count(unit->id)) {
     const Entity* content =
-        state.map[guard_posts_[unit->id].x][guard_posts_[unit->id].y];
-    if (!content || state.props.at(content->entityType).canMove)
+        state_->map[guard_posts_[unit->id].x][guard_posts_[unit->id].y];
+    if (!content || state_->props.at(content->entityType).canMove)
       return guard_posts_[unit->id];
   }
 
@@ -143,7 +141,7 @@ Vec2Int FightingPlanner::getBestGuardPosition(const State& state,
 
   for (int i = 0; i < heatmap_.size(); i += 2) {
     for (int j = 0; j < heatmap_.size(); j += 2) {
-      if (state.map[i][j] != nullptr) continue;
+      if (state_->map[i][j] != nullptr) continue;
       bool free_post = true;
       for (const auto& post : guard_posts_) {
         if (post.second.x == i && post.second.y == j) {
@@ -166,11 +164,11 @@ Vec2Int FightingPlanner::getBestGuardPosition(const State& state,
   return result;
 }
 
-void FightingPlanner::fillHeatMap(const State& state, State::EntityList list) {
+void FightingPlanner::fillHeatMap(State::EntityList list) {
   if (list.empty()) return;
-  const int size       = state.props.at(list[0]->entityType).size;
+  const int size       = state_->props.at(list[0]->entityType).size;
   const bool is_worker = list[0]->entityType == BUILDER_UNIT;
-  const int map_size   = static_cast<int>(state.map.size());
+  const int map_size   = static_cast<int>(state_->map.size());
 
   for (const auto* entity : list) {
     Vec2Int center(entity->position.x + size / 2,

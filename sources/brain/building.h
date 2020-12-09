@@ -10,7 +10,7 @@
 class BuildingPlanner {
  public:
   void update(const PlayerView& view, State& state);
-  EntityAction command(const State& state, const Entity* entity);
+  EntityAction command(const Entity* entity);
 
  private:
   struct Cell {
@@ -32,16 +32,16 @@ class BuildingPlanner {
     EntityType type;
   };
 
-  void repairBuildings(const State& state, const State::EntityList& list);
-  void build(const State& state, EntityType type);
+  void repair(const State::EntityList& list);
+  void build(EntityType type);
   void run();
   void dig();
 
-  int nearestFreeDrone(Vec2Int position, const State& state) const;
-  Vec2Int nearestFreePlacing(const State& state, EntityType type) const;
+  int nearestFreeDrone(Vec2Int position) const;
+  Vec2Int nearestFreePlacing(EntityType type) const;
   Vec2Int nearestFreePlace(Vec2Int pos) const;
-  std::vector<std::pair<Vec2Int, Vec2Int>> BuildingPlanner::diggingPlaces()
-      const;
+
+  std::vector<std::pair<Vec2Int, Vec2Int>> diggingPlaces() const;
 
   const State* state_;
   std::vector<std::vector<Cell>> map_;
