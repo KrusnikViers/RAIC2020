@@ -35,12 +35,9 @@ void BuildingPlanner::update(const PlayerView& view, State& state) {
     }
   }
 
-  repair(state.supplies);
-  repair(state.m_barracks);
-  repair(state.r_barracks);
-  repair(state.bases);
+  repair(state.buildings);
 
-  if (state.supply_used >= (state.supply_now + state.supply_building) * 0.8 &&
+  if (state.supply_used >= (state.supply_now + state.supply_building) * 0.75 &&
       state.resource >= 100) {
     build(HOUSE);
   }
@@ -83,7 +80,7 @@ EntityAction BuildingPlanner::command(const Entity* entity) {
 
 void BuildingPlanner::repair(const State::EntityList& list) {
   for (const auto& building : list) {
-    if (!building->active) {
+    if (building->health < state_->props.at(building->entityType).maxHealth) {
       int drone_id = nearestFreeDrone(building->position);
       if (drone_id == -1) continue;
       commands_[drone_id] = Command(building->position, building->entityType);

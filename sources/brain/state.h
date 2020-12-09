@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <set>
 
 #include "model/Model.hpp"
 #include "strategy/DebugInterface.hpp"
@@ -17,13 +18,12 @@ class State {
   EntityList melees;
   EntityList ranged;
   EntityList supplies;
-  EntityList bases;
-  EntityList m_barracks;
-  EntityList r_barracks;
-  EntityList turrets;
+  EntityList buildings;
   EntityList enemies;
   EntityList resources;
   EntityList battle_units;
+
+  std::set<EntityType> to_build;
 
   int resource;
   int resource_planned;

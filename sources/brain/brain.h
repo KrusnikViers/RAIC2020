@@ -14,6 +14,8 @@ class Brain {
   Action update(const PlayerView& playerView, DebugInterface* debugInterface);
 
  private:
+  int army_size_ = 18;
+
   State state_;
   BuildingPlanner building_;
   FightingPlanner fighting_;

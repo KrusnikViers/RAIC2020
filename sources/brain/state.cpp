@@ -19,14 +19,11 @@ void State::update(const PlayerView& view) {
   drones.clear();
   melees.clear();
   ranged.clear();
-  supplies.clear();
-  bases.clear();
-  m_barracks.clear();
-  r_barracks.clear();
-  turrets.clear();
+  buildings.clear();
   enemies.clear();
   resources.clear();
   battle_units.clear();
+  to_build.clear();
 
   resource = resource_planned = supply_used = supply_now = supply_building = 0;
 
@@ -65,19 +62,12 @@ void State::update(const PlayerView& view) {
           battle_units.push_back(&entity);
           break;
         case MELEE_BASE:
-          m_barracks.push_back(&entity);
-          break;
         case RANGED_BASE:
-          r_barracks.push_back(&entity);
-          break;
         case BUILDER_BASE:
-          bases.push_back(&entity);
-          break;
         case HOUSE:
-          supplies.push_back(&entity);
-          break;
         case TURRET:
-          turrets.push_back(&entity);
+        case WALL:
+          buildings.push_back(&entity);
           break;
       }
 
