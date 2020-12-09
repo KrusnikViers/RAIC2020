@@ -72,7 +72,7 @@ void FightingPlanner::update(const PlayerView& view, State& state) {
 
   // If we're not under attack - initiate assault on my own.
   const int guard_size        = static_cast<int>(guard_.size());
-  const int kEnoughForAssault = 40;
+  const int kEnoughForAssault = 1;
   if (guard_size > kEnoughForAssault) {
     while (!guard_.empty()) {
       assault_[guard_.begin()->first] = guard_.begin()->second;

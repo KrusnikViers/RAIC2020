@@ -13,7 +13,7 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
     switch (entity.entityType) {
       case BUILDER_BASE: {
         if ((state_.supply_now < 20 && state_.drones.size() < 8) ||
-            (state_.drones.size() < state_.supply_now / 2 &&
+            (state_.drones.size() < state_.supply_now * 0.7 &&
              state_.resource < 100)) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
