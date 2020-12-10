@@ -16,15 +16,21 @@ class BuildingPlanner {
   struct Command {
     Command()                     = default;
     Command(const Command& other) = default;
-    Command(Vec2Int p, EntityType t) : pos(p), type(t){};
-    Command(Vec2Int p, Vec2Int p2, EntityType t)
-        : pos(p), move_to(p2), type(t){};
+    Command(Vec2Int drone_position, EntityType target_type)
+        : drone_position(drone_position), target_type(target_type){};
+    Command(Vec2Int target_position, Vec2Int drone_position,
+            EntityType target_type)
+        : drone_position(drone_position),
+          target_position(target_position),
+          target_type(target_type){};
 
-    bool operator<(const Command& other) const { return type < other.type; }
+    bool operator<(const Command& other) const {
+      return target_type < other.target_type;
+    }
 
-    Vec2Int pos;
-    Vec2Int move_to;
-    EntityType type;
+    Vec2Int drone_position;
+    Vec2Int target_position;
+    EntityType target_type;
   };
 
   void repair(const State::EntityList& list);
@@ -32,7 +38,10 @@ class BuildingPlanner {
   void run();
   void dig();
 
-  int nearestFreeDrone(Vec2Int position) const;
+  std::vector<Vec2Int> builderPlacings(Vec2Int position,
+                                       EntityType building_type) const;
+  std::pair<Vec2Int, int> droneForBuilding(Vec2Int position,
+                                           EntityType building_type) const;
   Vec2Int nearestFreePlacing(EntityType type) const;
   Vec2Int nearestFreePlace(Vec2Int pos) const;
 
