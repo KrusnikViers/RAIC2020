@@ -8,10 +8,10 @@
 
 class FightingPlanner {
  public:
-  void update(const PlayerView& view, State& state);
+  void update();
   EntityAction command(const Entity* entity);
-  Vec2Int whereToSpawn(const Entity* building);
 
+ private:
   enum ThreatClass { Neutral, Protected };
 
   struct Cell {
@@ -19,12 +19,9 @@ class FightingPlanner {
     bool guard_post = false;
   };
 
- private:
   void fillHeatMap();
   const Entity* getNearestEnemy(const Entity* unit, bool guard);
   Vec2Int getBestGuardPosition(const Entity* unit);
-
-  const State* state_;
 
   std::unordered_set<int> guard_awaken_;
   std::unordered_map<int, Vec2Int> guard_posts_;

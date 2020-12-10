@@ -13,7 +13,8 @@ SET (MY_SOURCES
     "sources/brain/fighting.h"
     "sources/brain/state.cpp"
     "sources/brain/state.h"
-    "sources/brain/utils-inl.h"
+    "sources/brain/utils.cpp"
+    "sources/brain/utils.h"
 )
 add_executable(aicup2020 ${HEADERS} ${SOURCES} ${MY_SOURCES})
 target_include_directories(aicup2020 PRIVATE sources)

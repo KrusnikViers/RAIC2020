@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <set>
+#include <vector>
 
 #include "model/Model.hpp"
 #include "strategy/DebugInterface.hpp"
@@ -14,19 +14,19 @@ class State {
   void update(const PlayerView& view);
 
   int id;
+  int tick_number = 0;
+
   EntityList drones;
   EntityList melees;
   EntityList ranged;
-  EntityList supplies;
-  EntityList buildings;
-  EntityList enemies;
-  EntityList resources;
   EntityList battle_units;
 
-  std::set<EntityType> to_build;
+  EntityList buildings;
+
+  EntityList enemies;
+  EntityList resources;
 
   int resource;
-  int resource_planned;
   int supply_used;
   int supply_now;
   int supply_building;
@@ -35,3 +35,7 @@ class State {
   std::unordered_map<EntityType, EntityProperties> props;
   EntityMap all;
 };
+
+// Singleton implementation. For all the methods in planners called, you can
+// assume that state represents refreshed status for the current tick.
+State& state();

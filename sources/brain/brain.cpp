@@ -1,24 +1,35 @@
 #include "brain/brain.h"
 
-Action Brain::update(const PlayerView& view, DebugInterface* debug) {
-  state_.update(view);
-  fighting_.update(view, state_);
-  building_.update(view, state_);
+namespace {
+
+Vec2Int spawnableCell(const Entity* entity) {
+  for (const auto& point : frameCells(entity, false)) {
+    if (isFree(point.x, point.y)) return point;
+  }
+  return entity->position;
+}
+
+}  // namespace
+
+Action Brain::update(const PlayerView& view) {
+  state().update(view);
+  fighting_.update();
+  building_.update();
 
   Action result = Action(std::unordered_map<int, EntityAction>());
 
   for (const auto& entity : view.entities) {
-    if (!entity.playerId || *entity.playerId != state_.id) continue;
+    if (!entity.playerId || *entity.playerId != state().id) continue;
 
     switch (entity.entityType) {
       case BUILDER_BASE: {
-        if ((state_.supply_now < 20 && state_.drones.size() < 8) ||
-            (state_.drones.size() < state_.supply_now * 0.7 &&
-             state_.resource < 150)) {
+        if ((state().supply_now < 20 && state().drones.size() < 8) ||
+            (state().drones.size() < state().supply_now * 0.7 &&
+             state().resource < 150)) {
           result.entityActions[entity.id] =
               EntityAction(nullptr,
                            std::make_shared<BuildAction>(
-                               BUILDER_UNIT, fighting_.whereToSpawn(&entity)),
+                               BUILDER_UNIT, spawnableCell(&entity)),
                            nullptr, nullptr);
         } else {
           result.entityActions[entity.id] =
@@ -28,12 +39,11 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
       }
 
       case MELEE_BASE: {
-        if (state_.melees.size() <= state_.ranged.size() + 3) {
-          result.entityActions[entity.id] =
-              EntityAction(nullptr,
-                           std::make_shared<BuildAction>(
-                               MELEE_UNIT, fighting_.whereToSpawn(&entity)),
-                           nullptr, nullptr);
+        if (state().melees.size() <= state().ranged.size() + 3) {
+          result.entityActions[entity.id] = EntityAction(
+              nullptr,
+              std::make_shared<BuildAction>(MELEE_UNIT, spawnableCell(&entity)),
+              nullptr, nullptr);
         } else {
           result.entityActions[entity.id] =
               EntityAction(nullptr, nullptr, nullptr, nullptr);
@@ -42,11 +52,10 @@ Action Brain::update(const PlayerView& view, DebugInterface* debug) {
       }
 
       case RANGED_BASE: {
-        result.entityActions[entity.id] =
-            EntityAction(nullptr,
-                         std::make_shared<BuildAction>(
-                             RANGED_UNIT, fighting_.whereToSpawn(&entity)),
-                         nullptr, nullptr);
+        result.entityActions[entity.id] = EntityAction(
+            nullptr,
+            std::make_shared<BuildAction>(RANGED_UNIT, spawnableCell(&entity)),
+            nullptr, nullptr);
         break;
       }
 

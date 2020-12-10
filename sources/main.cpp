@@ -25,10 +25,7 @@ class Runner {
       auto message = ServerMessage::readFrom(*inputStream);
       if (auto getActionMessage =
               std::dynamic_pointer_cast<ServerMessage::GetAction>(message)) {
-        ClientMessage::ActionMessage(
-            brain.update(
-                getActionMessage->playerView,
-                getActionMessage->debugAvailable ? &debugInterface : nullptr))
+        ClientMessage::ActionMessage(brain.update(getActionMessage->playerView))
             .writeTo(*outputStream);
         outputStream->flush();
       } else if (auto finishMessage =

@@ -2,6 +2,14 @@
 
 #include "model/DebugCommand.hpp"
 
+namespace {
+
+State instance;
+
+}
+
+State& state() { return instance; }
+
 void State::update(const PlayerView& view) {
   // Prepare containers
   if (map.empty()) {
@@ -23,9 +31,8 @@ void State::update(const PlayerView& view) {
   enemies.clear();
   resources.clear();
   battle_units.clear();
-  to_build.clear();
 
-  resource = resource_planned = supply_used = supply_now = supply_building = 0;
+  resource = supply_used = supply_now = supply_building = 0;
 
   // Refill storage
   for (const auto& player : view.players) {

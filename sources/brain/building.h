@@ -4,12 +4,12 @@
 #include <unordered_set>
 
 #include "brain/state.h"
-#include "brain/utils-inl.h"
+#include "brain/utils.h"
 #include "model/Model.hpp"
 
 class BuildingPlanner {
  public:
-  void update(const PlayerView& view, State& state);
+  void update();
   EntityAction command(const Entity* entity);
 
  private:
@@ -43,7 +43,6 @@ class BuildingPlanner {
 
   std::vector<std::pair<Vec2Int, Vec2Int>> diggingPlaces() const;
 
-  const State* state_;
   std::vector<std::vector<Cell>> map_;
   std::unordered_map<int, Command> commands_;
 };
