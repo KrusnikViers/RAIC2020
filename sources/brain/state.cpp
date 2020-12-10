@@ -21,7 +21,7 @@ void State::update(const PlayerView& view) {
   // Reset storage
   id = view.myId;
   for (auto& row : map)
-    for (auto& cell : row) cell = nullptr;
+    for (auto& cell : row) resetCell(cell);
 
   all.clear();
   drones.clear();
@@ -41,6 +41,8 @@ void State::update(const PlayerView& view) {
       break;
     }
   }
+  map_size = view.mapSize;
+  ++tick_number;
 
   for (const auto& entity : view.entities) {
     all[entity.id] = &entity;
@@ -48,7 +50,7 @@ void State::update(const PlayerView& view) {
     const int entity_size = props.at(entity.entityType).size;
     for (int i = 0; i < entity_size; ++i) {
       for (int j = 0; j < entity_size; ++j)
-        map[entity.position.x + i][entity.position.y + j] = &entity;
+        map[entity.position.x + i][entity.position.y + j].entity = &entity;
     }
 
     if (entity.entityType == RESOURCE) {

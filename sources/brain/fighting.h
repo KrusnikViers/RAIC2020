@@ -12,13 +12,6 @@ class FightingPlanner {
   EntityAction command(const Entity* entity);
 
  private:
-  enum ThreatClass { Neutral, Protected };
-
-  struct Cell {
-    ThreatClass threat;
-    bool guard_post = false;
-  };
-
   void fillHeatMap();
   const Entity* getNearestEnemy(const Entity* unit, bool guard);
   Vec2Int getBestGuardPosition(const Entity* unit);
@@ -26,7 +19,6 @@ class FightingPlanner {
   std::unordered_set<int> guard_awaken_;
   std::unordered_map<int, Vec2Int> guard_posts_;
 
-  std::vector<std::vector<Cell>> map_;
   std::unordered_map<int, const Entity*> attackers_;
   std::unordered_map<int, const Entity*> targeted_;
 };

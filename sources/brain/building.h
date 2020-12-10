@@ -13,11 +13,6 @@ class BuildingPlanner {
   EntityAction command(const Entity* entity);
 
  private:
-  struct Cell {
-    bool move_away;
-    bool taken_by;
-  };
-
   struct Command {
     Command()                     = default;
     Command(const Command& other) = default;
@@ -43,6 +38,5 @@ class BuildingPlanner {
 
   std::vector<std::pair<Vec2Int, Vec2Int>> diggingPlaces() const;
 
-  std::vector<std::vector<Cell>> map_;
   std::unordered_map<int, Command> commands_;
 };

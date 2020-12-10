@@ -11,22 +11,12 @@ const int kProtectedAreaFromBuildings = 10;
 
 void FightingPlanner::update() {
   // Regenerate per-tick stuff
-  if (map_.empty()) {
-    map_.resize(state().map.size());
-    for (auto& row : map_) row.resize(state().map.size());
-  }
-  for (auto& row : map_) {
-    for (auto& cell : row) {
-      cell.threat     = Neutral;
-      cell.guard_post = false;
-    }
-  }
   fillHeatMap();
 
   attackers_.clear();
-
   for (const auto* enemy : state().enemies) {
-    if (map_[enemy->position.x][enemy->position.y].threat == Protected)
+    if (state().map[enemy->position.x][enemy->position.y].protection_class ==
+        State::Protected)
       attackers_[enemy->id] = enemy;
   }
   std::unordered_set<int> awaken;
@@ -89,13 +79,14 @@ Vec2Int FightingPlanner::getBestGuardPosition(const Entity* unit) {
   bool found      = false;
   int best_result = std::max(result.x, result.y);
 
-  for (int i = 0; i < map_.size(); ++i) {
+  for (int i = 0; i < state().map.size(); ++i) {
     if (i % 4 < 2) continue;
-    for (int j = 0; j < map_.size(); ++j) {
+    for (int j = 0; j < state().map.size(); ++j) {
       if (j % 4 < 2) continue;
-      if (state().map[i][j] && state().map[i][j]->id != unit->id) continue;
-      if (map_[i][j].guard_post) continue;
-      if (map_[i][j].threat == Neutral) continue;
+      if (state().map[i][j].entity && state().map[i][j].entity->id != unit->id)
+        continue;
+      if (state().map[i][j].guard_planned_position) continue;
+      if (state().map[i][j].protection_class == State::Neutral) continue;
 
       bool is_good = true;
       for (int io = -1; io <= 1; ++io) {
@@ -118,7 +109,7 @@ Vec2Int FightingPlanner::getBestGuardPosition(const Entity* unit) {
     }
   }
 
-  map_[result.x][result.y].guard_post = true;
+  state().map[result.x][result.y].guard_planned_position = true;
   return result;
 }
 
@@ -129,25 +120,25 @@ void FightingPlanner::fillHeatMap() {
         std::max(0, entity->position.x - kProtectedAreaFromBuildings),
         std::max(0, entity->position.y - kProtectedAreaFromBuildings));
     Vec2Int largest(
-        std::min((int)map_.size(),
+        std::min((int)state().map.size(),
                  entity->position.x + size + kProtectedAreaFromBuildings + 1),
-        std::min((int)map_.size(),
+        std::min((int)state().map.size(),
                  entity->position.y + size + kProtectedAreaFromBuildings + 1));
     for (int i = smallest.x; i < largest.x; ++i) {
       for (int j = smallest.y; j < largest.y; ++j) {
-        map_[i][j].threat = Protected;
+        state().map[i][j].protection_class = State::Protected;
       }
     }
   }
 
   for (const auto& drone : state().drones) {
-    Vec2Int largest(
-        std::min((int)map_.size(), drone->position.x + kProtectedAreaFromDrone),
-        std::min((int)map_.size(),
-                 drone->position.y + kProtectedAreaFromDrone));
+    Vec2Int largest(std::min((int)state().map.size(),
+                             drone->position.x + kProtectedAreaFromDrone),
+                    std::min((int)state().map.size(),
+                             drone->position.y + kProtectedAreaFromDrone));
     for (int i = 0; i < largest.x; ++i) {
       for (int j = 0; j < largest.y; ++j) {
-        map_[i][j].threat = Protected;
+        state().map[i][j].protection_class = State::Protected;
       }
     }
   }

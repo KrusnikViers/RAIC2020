@@ -10,7 +10,7 @@ bool isOut(int x, int y) {
 bool isFree(int x, int y, IsFreeAllowance allowance) {
   if (isOut(x, y)) return false;
 
-  const Entity* entity = state().map[x][y];
+  const Entity* entity = state().map[x][y].entity;
   if (!entity) return true;
 
   if (!entity->playerId || *entity->playerId != state().id) return false;
