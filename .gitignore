@@ -1,7 +1,7 @@
 .vs
 out/
 aicup2020_sources.zip
-runner/*.json
+runner/aicup2020-preferences.json
 runner/*.exe
-runner/*.bat
+runner/*.txt
 CMakeSettings.json
