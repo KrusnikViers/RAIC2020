@@ -5,7 +5,7 @@
 namespace {
 
 const int kProtectedAreaFromDrone     = 10;
-const int kProtectedAreaFromBuildings = 10;
+const int kProtectedAreaFromBuildings = 15;
 
 }  // namespace
 
@@ -22,8 +22,9 @@ void FightingPlanner::update() {
   std::unordered_set<int> awaken;
   for (const auto* unit : state().battle_units) {
     if (guard_awaken_.count(unit->id) || !attackers_.empty() ||
-        state().supply_now > 60)
+        state().resources.size() < state().initial_resource * 0.66) {
       awaken.insert(unit->id);
+    }
   }
   guard_awaken_ = awaken;
 }
@@ -63,8 +64,12 @@ const Entity* FightingPlanner::getNearestEnemy(const Entity* unit, bool guard) {
   int best_score       = 0;
   bool found           = false;
   for (const auto* enemy : state().enemies) {
-    int score = std::lround(r_dist(unit->position, enemy->position));
-    if (attackers_.count(enemy->id)) score -= (int)state().map.size() / 4;
+    int score = std::lround(r_dist(unit->position, enemy->position)) +
+                (enemy->entityType == BUILDER_UNIT ? 10 : 0);
+    if (attackers_.count(enemy->id)) {
+      score -= (state().map_size - lr_dist(enemy->position, Vec2Int(0, 0))) *
+               (state().map_size - lr_dist(enemy->position, Vec2Int(0, 0)));
+    }
     if (!found || score < best_score) {
       found      = true;
       best_score = score;
@@ -86,6 +91,7 @@ Vec2Int FightingPlanner::getBestGuardPosition(const Entity* unit) {
       if (state().map[i][j].entity && state().map[i][j].entity->id != unit->id)
         continue;
       if (state().map[i][j].guard_planned_position) continue;
+      if (state().map[i][j].drone_planned_position) continue;
       if (state().map[i][j].protection_class == State::Neutral) continue;
 
       bool is_good = true;

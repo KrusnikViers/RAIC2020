@@ -13,6 +13,10 @@ inline double r_dist(const Vec2Int& p1, const Vec2Int& p2) {
                    (p1.y - p2.y) * (p1.y - p2.y));
 }
 
+inline int lr_dist(const Vec2Int& p1, const Vec2Int& p2) {
+  return std::lround(r_dist(p1, p2));
+}
+
 inline int remoteness(const Vec2Int& p) { return p.x * p.x + p.y * p.y; }
 
 bool isOut(int x, int y);

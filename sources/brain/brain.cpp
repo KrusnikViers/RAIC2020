@@ -13,8 +13,8 @@ Vec2Int spawnableCell(const Entity* entity) {
 
 Action Brain::update(const PlayerView& view) {
   state().update(view);
-  fighting_.update();
   building_.update();
+  fighting_.update();
 
   Action result = Action(std::unordered_map<int, EntityAction>());
 
@@ -24,8 +24,8 @@ Action Brain::update(const PlayerView& view) {
     switch (entity.entityType) {
       case BUILDER_BASE: {
         if ((state().supply_now < 20 && state().drones.size() < 8) ||
-            (state().drones.size() < state().supply_now * 0.7 &&
-             state().resource < 150)) {
+            (state().drones.size() < state().supply_now * 0.75 &&
+             state().resource < 200)) {
           result.entityActions[entity.id] =
               EntityAction(nullptr,
                            std::make_shared<BuildAction>(
@@ -39,7 +39,7 @@ Action Brain::update(const PlayerView& view) {
       }
 
       case MELEE_BASE: {
-        if (state().melees.size() <= state().ranged.size() + 3) {
+        if (state().melees.size() <= state().ranged.size() + 5) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(MELEE_UNIT, spawnableCell(&entity)),

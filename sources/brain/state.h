@@ -23,6 +23,8 @@ class State {
 
   void update(const PlayerView& view);
 
+  bool has(EntityType type) const;
+
   int id;
   int tick_number = 0;
   int map_size;
@@ -37,6 +39,7 @@ class State {
   EntityList enemies;
   EntityList resources;
 
+  int initial_resource = -1;
   int resource;
   int supply_used;
   int supply_now;

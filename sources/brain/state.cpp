@@ -1,5 +1,7 @@
 #include "brain/state.h"
 
+#include <algorithm>
+
 #include "model/DebugCommand.hpp"
 
 namespace {
@@ -64,11 +66,9 @@ void State::update(const PlayerView& view) {
           break;
         case MELEE_UNIT:
           melees.push_back(&entity);
-          battle_units.push_back(&entity);
           break;
         case RANGED_UNIT:
           ranged.push_back(&entity);
-          battle_units.push_back(&entity);
           break;
         case MELEE_BASE:
         case RANGED_BASE:
@@ -80,9 +80,24 @@ void State::update(const PlayerView& view) {
           break;
       }
 
+      std::sort(melees.begin(), melees.end());
+      std::sort(ranged.begin(), ranged.end());
+      for (const auto* entity : melees) battle_units.push_back(entity);
+      for (const auto* entity : ranged) battle_units.push_back(entity);
+
       supply_used += props.at(entity.entityType).populationUse;
       (entity.active ? supply_now : supply_building) +=
           props.at(entity.entityType).populationProvide;
     }
   }
+
+  if (initial_resource == -1) initial_resource = (int)resources.size();
+}
+
+bool State::has(EntityType type) const {
+  for (const auto entity : state().all) {
+    if (!entity.second->playerId || *entity.second->playerId != id) continue;
+    if (entity.second->entityType == type) return true;
+  }
+  return false;
 }

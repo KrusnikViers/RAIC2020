@@ -33,10 +33,11 @@ class BuildingPlanner {
     EntityType target_type;
   };
 
-  void repair(const State::EntityList& list);
+  void repair();
   void build(EntityType type);
   void run();
   void dig();
+  void rampage();
 
   std::vector<Vec2Int> builderPlacings(Vec2Int position,
                                        EntityType building_type) const;
