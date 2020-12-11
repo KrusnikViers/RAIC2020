@@ -9,6 +9,8 @@ Vec2Int spawnableCell(const Entity* entity) {
   return entity->position;
 }
 
+const double kRangedBuildPriority = 1.1;
+
 }  // namespace
 
 Action Brain::update(const PlayerView& view) {
@@ -23,9 +25,13 @@ Action Brain::update(const PlayerView& view) {
 
     switch (entity.entityType) {
       case BUILDER_BASE: {
-        if ((state().supply_now < 20 && state().drones.size() < 8) ||
-            (state().drones.size() < state().supply_now * 0.75 &&
-             state().resource < 200)) {
+        const bool no_more_drones =
+            state().drones.size() >= state().map_size * 0.66 ||
+            state().drones.size() >= state().resources.size() / 3;
+        const bool setup_on_start =
+            state().supply_now == 15 && state().drones.size() < 9;
+
+        if (!no_more_drones && (!fighting_.recovery || setup_on_start)) {
           result.entityActions[entity.id] =
               EntityAction(nullptr,
                            std::make_shared<BuildAction>(
@@ -39,7 +45,13 @@ Action Brain::update(const PlayerView& view) {
       }
 
       case MELEE_BASE: {
-        if (state().melees.size() <= state().ranged.size() + 5) {
+        double efficacy = (double)(state().props[RANGED_UNIT].initialCost +
+                                   state().ranged.size()) /
+                          (double)(state().props[MELEE_UNIT].initialCost +
+                                   state().melees.size());
+        if (fighting_.critical_fight ||
+            (state().battle_units.size() < fighting_.needed_army &&
+             efficacy > kRangedBuildPriority)) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(MELEE_UNIT, spawnableCell(&entity)),
@@ -52,10 +64,17 @@ Action Brain::update(const PlayerView& view) {
       }
 
       case RANGED_BASE: {
-        result.entityActions[entity.id] = EntityAction(
-            nullptr,
-            std::make_shared<BuildAction>(RANGED_UNIT, spawnableCell(&entity)),
-            nullptr, nullptr);
+        if (state().battle_units.size() < fighting_.needed_army ||
+            state().resource > 250) {
+          result.entityActions[entity.id] =
+              EntityAction(nullptr,
+                           std::make_shared<BuildAction>(
+                               RANGED_UNIT, spawnableCell(&entity)),
+                           nullptr, nullptr);
+        } else {
+          result.entityActions[entity.id] =
+              EntityAction(nullptr, nullptr, nullptr, nullptr);
+        }
         break;
       }
 

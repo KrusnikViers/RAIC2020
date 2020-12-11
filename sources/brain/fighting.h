@@ -11,6 +11,10 @@ class FightingPlanner {
   void update();
   EntityAction command(const Entity* entity);
 
+  int needed_army = 20;
+  bool recovery = true;
+  bool critical_fight = false;
+
  private:
   void fillHeatMap();
   const Entity* getNearestEnemy(const Entity* unit, bool guard);

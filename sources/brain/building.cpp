@@ -10,13 +10,13 @@ void BuildingPlanner::update() {
 
   repair();
 
-  /*for (const EntityType type : {BUILDER_BASE, MELEE_BASE, RANGED_BASE})
-    if (!state().has(type)) build(type);*/
-
-  if (state().supply_used >=
-          (state().supply_now + state().supply_building) * 0.75 &&
-      state().resource >= 100 &&
-      state().resources.size() * 4 >= state().initial_resource) {
+  const double supply_use_of_planned =
+      (double)(state().supply_used) /
+      (state().supply_now + state().supply_building);
+  const double supply_use_of_now =
+      (double)(state().supply_used) / state().supply_now;
+  if ((supply_use_of_planned >= 0.8 && state().resource >= 200) ||
+      (supply_use_of_now >= 0.95 && state().resource >= 500)) {
     build(HOUSE);
   }
 

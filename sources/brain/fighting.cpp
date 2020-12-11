@@ -22,11 +22,27 @@ void FightingPlanner::update() {
   std::unordered_set<int> awaken;
   for (const auto* unit : state().battle_units) {
     if (guard_awaken_.count(unit->id) || !attackers_.empty() ||
-        state().resources.size() < state().initial_resource * 0.66) {
+        state().resources.size() < state().initial_resource * 0.5) {
       awaken.insert(unit->id);
     }
   }
   guard_awaken_ = awaken;
+
+  if (state().battle_units.size() > needed_army)
+    needed_army = (int)state().battle_units.size();
+  if (state().battle_units.size() < needed_army * 0.75) {
+    needed_army *= 2;
+    recovery = true;
+  } else {
+    recovery = false;
+    for (const auto* unit : state().battle_units) {
+      if (guard_awaken_.size() >= state().battle_units.size() * 0.5) {
+        break;
+      }
+      guard_awaken_.insert(unit->id);
+    }
+  }
+  if (state().battle_units.size() < needed_army / 2) critical_fight = true;
 }
 
 EntityAction FightingPlanner::command(const Entity* entity) {
@@ -44,7 +60,7 @@ EntityAction FightingPlanner::command(const Entity* entity) {
         std::make_shared<MoveAction>(enemy->position, true, true), nullptr,
         std::make_shared<AttackAction>(
             std::make_shared<int>(enemy->id),
-            std::make_shared<AutoAttack>(10, std::vector<EntityType>())),
+            std::make_shared<AutoAttack>(8, std::vector<EntityType>())),
         nullptr);
   } else {
     Vec2Int new_pos = getBestGuardPosition(entity);
@@ -54,7 +70,7 @@ EntityAction FightingPlanner::command(const Entity* entity) {
         std::make_shared<MoveAction>(new_pos, true, true), nullptr,
         std::make_shared<AttackAction>(
             nullptr,
-            std::make_shared<AutoAttack>(10, std::vector<EntityType>())),
+            std::make_shared<AutoAttack>(8, std::vector<EntityType>())),
         nullptr);
   }
 }
@@ -65,10 +81,11 @@ const Entity* FightingPlanner::getNearestEnemy(const Entity* unit, bool guard) {
   bool found           = false;
   for (const auto* enemy : state().enemies) {
     int score = std::lround(r_dist(unit->position, enemy->position)) +
-                (enemy->entityType == BUILDER_UNIT ? 10 : 0);
+                (enemy->entityType == BUILDER_UNIT ? 15 : 0);
     if (attackers_.count(enemy->id)) {
-      score -= (state().map_size - lr_dist(enemy->position, Vec2Int(0, 0))) *
-               (state().map_size - lr_dist(enemy->position, Vec2Int(0, 0)));
+      score -=
+          (2 * state().map_size - lr_dist(enemy->position, Vec2Int(0, 0))) *
+          (2 * state().map_size - lr_dist(enemy->position, Vec2Int(0, 0)));
     }
     if (!found || score < best_score) {
       found      = true;
