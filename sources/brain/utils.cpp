@@ -3,14 +3,14 @@
 #include "brain/state.h"
 
 bool isOut(int x, int y) {
-  static const size_t map_size = state().map.size();
+  static const int map_size = state().map_size;
   return x < 0 || y < 0 || x >= map_size || y >= map_size;
 }
 
 bool isFree(int x, int y, IsFreeAllowance allowance) {
   if (isOut(x, y)) return false;
 
-  const Entity* entity = state().map[x][y].entity;
+  const Entity* entity = state().cell(x, y).entity;
   if (!entity) return true;
 
   if (!entity->playerId || *entity->playerId != state().id) return false;
@@ -47,4 +47,17 @@ std::vector<Vec2Int> frameCells(int x, int y, int size, bool with_corners) {
     }
   }
   return result;
+}
+
+std::shared_ptr<MoveAction> actionMove(Vec2Int position, bool find_nearest) {
+  return std::make_shared<MoveAction>(position, find_nearest, true);
+}
+
+std::shared_ptr<AttackAction> actionAttack(int target, bool autoattack) {
+  std::shared_ptr<AutoAttack> autoattack_action =
+      autoattack ? std::make_shared<AutoAttack>(8, std::vector<EntityType>())
+                 : nullptr;
+  return std::make_shared<AttackAction>(
+      target == -1 ? nullptr : std::make_shared<int>(target),
+      autoattack_action);
 }

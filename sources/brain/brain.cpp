@@ -1,17 +1,6 @@
 #include "brain/brain.h"
 
-namespace {
-
-Vec2Int spawnableCell(const Entity* entity) {
-  for (const auto& point : frameCells(entity, false)) {
-    if (isFree(point.x, point.y)) return point;
-  }
-  return entity->position;
-}
-
 const double kRangedBuildPriority = 1.1;
-
-}  // namespace
 
 Action Brain::update(const PlayerView& view) {
   state().update(view);
@@ -25,21 +14,20 @@ Action Brain::update(const PlayerView& view) {
 
     switch (entity.entityType) {
       case BUILDER_BASE: {
-        const bool no_more_drones =
+        const bool total_upper_limit =
             state().drones.size() >= state().map_size * 0.66 ||
             state().drones.size() >= state().resources.size() / 3;
-        const bool setup_on_start =
+        const bool start_rush =
             state().supply_now == 15 && state().drones.size() < 9;
 
-        if (!no_more_drones && (!fighting_.recovery || setup_on_start)) {
+        if (!total_upper_limit && (!fighting_.recovery || start_rush)) {
           result.entityActions[entity.id] =
               EntityAction(nullptr,
                            std::make_shared<BuildAction>(
                                BUILDER_UNIT, spawnableCell(&entity)),
                            nullptr, nullptr);
         } else {
-          result.entityActions[entity.id] =
-              EntityAction(nullptr, nullptr, nullptr, nullptr);
+          result.entityActions[entity.id] = kNoAction;
         }
         break;
       }
@@ -49,16 +37,18 @@ Action Brain::update(const PlayerView& view) {
                                    state().ranged.size()) /
                           (double)(state().props[MELEE_UNIT].initialCost +
                                    state().melees.size());
-        if (fighting_.critical_fight ||
-            (state().battle_units.size() < fighting_.needed_army &&
-             efficacy > kRangedBuildPriority)) {
+        const bool cheap_enough =
+            state().battle_units.size()<fighting_.needed_army &&
+            efficacy >
+            kRangedBuildPriority;
+
+        if (fighting_.critical_fight || cheap_enough) {
           result.entityActions[entity.id] = EntityAction(
               nullptr,
               std::make_shared<BuildAction>(MELEE_UNIT, spawnableCell(&entity)),
               nullptr, nullptr);
         } else {
-          result.entityActions[entity.id] =
-              EntityAction(nullptr, nullptr, nullptr, nullptr);
+          result.entityActions[entity.id] = kNoAction;
         }
         break;
       }
@@ -72,8 +62,7 @@ Action Brain::update(const PlayerView& view) {
                                RANGED_UNIT, spawnableCell(&entity)),
                            nullptr, nullptr);
         } else {
-          result.entityActions[entity.id] =
-              EntityAction(nullptr, nullptr, nullptr, nullptr);
+          result.entityActions[entity.id] = kNoAction;
         }
         break;
       }

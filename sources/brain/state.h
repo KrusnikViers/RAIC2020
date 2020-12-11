@@ -23,18 +23,18 @@ class State {
 
   void update(const PlayerView& view);
 
-  bool has(EntityType type) const;
+  int map_size;
+  MapCell& cell(Vec2Int pos) { return map[pos.x][pos.y]; }
+  MapCell& cell(int x, int y) { return map[x][y]; }
 
   int id;
-  int tick_number = 0;
-  int map_size;
 
   EntityList drones;
   EntityList melees;
   EntityList ranged;
-  EntityList battle_units;
-
   EntityList buildings;
+
+  EntityList battle_units;
 
   EntityList enemies;
   EntityList resources;
@@ -45,7 +45,6 @@ class State {
   int supply_now;
   int supply_building;
 
-  std::vector<std::vector<MapCell>> map;
   std::unordered_map<EntityType, EntityProperties> props;
   EntityMap all;
 
@@ -57,6 +56,8 @@ class State {
     cell.drone_planned_position = false;
     cell.drone_danger_area      = false;
   }
+
+  std::vector<std::vector<MapCell>> map;
 };
 
 // Singleton implementation. For all the methods in planners called, you can

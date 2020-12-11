@@ -44,7 +44,6 @@ void State::update(const PlayerView& view) {
     }
   }
   map_size = view.mapSize;
-  ++tick_number;
 
   for (const auto& entity : view.entities) {
     all[entity.id] = &entity;
@@ -92,12 +91,4 @@ void State::update(const PlayerView& view) {
   }
 
   if (initial_resource == -1) initial_resource = (int)resources.size();
-}
-
-bool State::has(EntityType type) const {
-  for (const auto entity : state().all) {
-    if (!entity.second->playerId || *entity.second->playerId != id) continue;
-    if (entity.second->entityType == type) return true;
-  }
-  return false;
 }

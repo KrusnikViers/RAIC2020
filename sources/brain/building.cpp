@@ -30,28 +30,19 @@ EntityAction BuildingPlanner::command(const Entity* entity) {
     const int size         = state().props.at(command.target_type).size;
     Vec2Int center(command.target_position.x + size / 2,
                    command.target_position.y + size / 2);
-    const Entity* target =
-        state()
-            .map[command.target_position.x][command.target_position.y]
-            .entity;
+    const Entity* target = state().cell(command.target_position).entity;
 
     if (command.target_type == RESOURCE) {
-      return EntityAction(
-          std::make_shared<MoveAction>(command.drone_position, true, true),
-          nullptr,
-          std::make_shared<AttackAction>(std::make_shared<int>(target->id),
-                                         nullptr),
-          nullptr);
+      return EntityAction(actionMove(command.drone_position, true), nullptr,
+                          actionAttack(target->id, false), nullptr);
     } else if (command.target_type == BUILDER_UNIT) {
-      return EntityAction(
-          std::make_shared<MoveAction>(command.drone_position, true, true),
-          nullptr, nullptr, nullptr);
+      return EntityAction(actionMove(command.drone_position, true), nullptr,
+                          nullptr, nullptr);
     } else if (!target || target->entityType != command.target_type) {
-      return EntityAction(
-          std::make_shared<MoveAction>(command.drone_position, true, true),
-          std::make_shared<BuildAction>(command.target_type,
-                                        command.target_position),
-          nullptr, nullptr);
+      return EntityAction(actionMove(command.drone_position, true),
+                          std::make_shared<BuildAction>(
+                              command.target_type, command.target_position),
+                          nullptr, nullptr);
     } else {
       return EntityAction(std::make_shared<MoveAction>(center, true, true),
                           nullptr, nullptr,
@@ -70,9 +61,7 @@ void BuildingPlanner::repair() {
       if (repair_placing.second == -1) continue;
       commands_[repair_placing.second] = Command(
           building->position, repair_placing.first, building->entityType);
-      state()
-          .map[repair_placing.first.x][repair_placing.first.y]
-          .drone_planned_position = true;
+      state().cell(repair_placing.first).drone_planned_position = true;
     }
   }
 }
@@ -87,12 +76,10 @@ void BuildingPlanner::build(EntityType type) {
 
   commands_[build_placing.second] =
       Command(best_place, build_placing.first, type);
-  state()
-      .map[build_placing.first.x][build_placing.first.y]
-      .drone_planned_position = true;
+  state().cell(build_placing.first).drone_planned_position = true;
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
-      state().map[best_place.x + i][best_place.y + j].drone_danger_area = true;
+      state().cell(best_place.x + i, best_place.y + j).drone_danger_area = true;
     }
   }
 }
@@ -111,7 +98,7 @@ void BuildingPlanner::run() {
       for (int i = smallest.x; i < largest.x; ++i) {
         for (int j = smallest.y; j < largest.y; ++j) {
           if (std::ceil(r_dist(Vec2Int(i, j), enemy->position)) <= range) {
-            state().map[i][j].drone_danger_area = true;
+            state().cell(i, j).drone_danger_area = true;
           }
         }
       }
@@ -119,13 +106,13 @@ void BuildingPlanner::run() {
   }
 
   for (const auto* drone : state().drones) {
-    if (state().map[drone->position.x][drone->position.y].drone_danger_area) {
+    if (state().cell(drone->position).drone_danger_area) {
       if (commands_.count(drone->id)) {
         const auto next_pos = commands_[drone->id].drone_position;
-        if (!state().map[next_pos.x][next_pos.y].drone_danger_area) continue;
+        if (!state().cell(next_pos).drone_danger_area) continue;
       }
       Vec2Int new_place = nearestFreePlace(drone->position);
-      state().map[new_place.x][new_place.y].drone_planned_position = true;
+      state().cell(new_place).drone_planned_position = true;
       commands_[drone->id] = Command(new_place, new_place, BUILDER_UNIT);
     }
   }
@@ -141,8 +128,8 @@ void BuildingPlanner::dig() {
   for (const auto* drone : state().drones) {
     if (commands_.count(drone->id)) continue;
     for (const auto& place : digging_places) {
-      if (state().map[place.second.x][place.second.y].drone_danger_area ||
-          state().map[place.second.x][place.second.y].drone_planned_position) {
+      if (state().cell(place.second).drone_danger_area ||
+          state().cell(place.second).drone_planned_position) {
         continue;
       }
       orders.push(std::make_pair(
@@ -156,14 +143,9 @@ void BuildingPlanner::dig() {
   while (!orders.empty()) {
     const auto& command = orders.top().second;
     if (!commands_.count(command.first) &&
-        !state()
-             .map[command.second.drone_position.x]
-                 [command.second.drone_position.y]
-             .drone_planned_position) {
+        !state().cell(command.second.drone_position).drone_planned_position) {
       commands_[command.first] = command.second;
-      state()
-          .map[command.second.drone_position.x][command.second.drone_position.y]
-          .drone_planned_position = true;
+      state().cell(command.second.drone_position).drone_planned_position = true;
     }
     orders.pop();
   }
@@ -180,12 +162,12 @@ void BuildingPlanner::rampage() {
 Vec2Int BuildingPlanner::nearestFreePlace(Vec2Int pos) const {
   bool found     = false;
   Vec2Int result = pos;
-  for (int i = 0; i < state().map.size(); ++i) {
-    for (int j = 0; j < state().map.size(); ++j) {
+  for (int i = 0; i < state().map_size; ++i) {
+    for (int j = 0; j < state().map_size; ++j) {
       const Vec2Int new_pos(i, j);
       if (!isFree(new_pos.x, new_pos.y) ||
-          state().map[i][j].drone_planned_position ||
-          state().map[i][j].drone_danger_area)
+          state().cell(i, j).drone_planned_position ||
+          state().cell(i, j).drone_danger_area)
         continue;
       if (!found || m_dist(new_pos, pos) < m_dist(result, pos)) {
         result = new_pos;
@@ -203,8 +185,8 @@ std::vector<Vec2Int> BuildingPlanner::builderPlacings(
   std::vector<Vec2Int> cells_available;
   for (const auto& cell : free_cells) {
     if (isOut(cell.x, cell.y) || !isFree(cell.x, cell.y, Drone) ||
-        state().map[cell.x][cell.x].drone_planned_position ||
-        state().map[cell.x][cell.x].drone_danger_area) {
+        state().cell(cell).drone_planned_position ||
+        state().cell(cell).drone_danger_area) {
       continue;
     }
     cells_available.push_back(cell);
@@ -223,7 +205,7 @@ std::pair<Vec2Int, int> BuildingPlanner::droneForBuilding(
       if (commands_.count(drone->id)) continue;
 
       if (!isFree(placing.x, placing.y) &&
-          state().map[placing.x][placing.y].entity->id != drone->id) {
+          state().cell(placing).entity->id != drone->id) {
         continue;
       }
 
@@ -244,8 +226,8 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
 
   const int size = state().props.at(type).size;
 
-  for (int i = 0; i < state().map.size() - size; ++i) {
-    for (int j = 0; j < state().map.size() - size; ++j) {
+  for (int i = 0; i < state().map_size - size; ++i) {
+    for (int j = 0; j < state().map_size - size; ++j) {
       Vec2Int cpos(i, j);
       if (best_distance != -1 && (remoteness(cpos) >= best_distance)) continue;
 
@@ -296,7 +278,7 @@ std::vector<std::pair<Vec2Int, Vec2Int>> BuildingPlanner::diggingPlaces()
   for (const auto* resource : state().resources) {
     for (const auto& point : frameCells(resource, false)) {
       if (isFree(point.x, point.y, Drone) &&
-          !state().map[point.x][point.y].drone_danger_area) {
+          !state().cell(point).drone_danger_area) {
         results.push_back(std::make_pair(resource->position, point));
       }
     }
