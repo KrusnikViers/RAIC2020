@@ -11,25 +11,25 @@ RepairProperties RepairProperties::readFrom(InputStream& stream) {
             result.validTargets[i] = EntityType::WALL;
             break;
         case 1:
-            result.validTargets[i] = EntityType::HOUSE;
+            result.validTargets[i] = EntityType::SUPPLY;
             break;
         case 2:
-            result.validTargets[i] = EntityType::BUILDER_BASE;
+            result.validTargets[i] = EntityType::BASE;
             break;
         case 3:
-            result.validTargets[i] = EntityType::BUILDER_UNIT;
+            result.validTargets[i] = EntityType::DRONE;
             break;
         case 4:
-            result.validTargets[i] = EntityType::MELEE_BASE;
+            result.validTargets[i] = EntityType::MBARRACKS;
             break;
         case 5:
-            result.validTargets[i] = EntityType::MELEE_UNIT;
+            result.validTargets[i] = EntityType::MELEE;
             break;
         case 6:
-            result.validTargets[i] = EntityType::RANGED_BASE;
+            result.validTargets[i] = EntityType::BARRACKS;
             break;
         case 7:
-            result.validTargets[i] = EntityType::RANGED_UNIT;
+            result.validTargets[i] = EntityType::RANGED;
             break;
         case 8:
             result.validTargets[i] = EntityType::RESOURCE;

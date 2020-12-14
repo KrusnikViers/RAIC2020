@@ -16,25 +16,25 @@ Entity Entity::readFrom(InputStream& stream) {
         result.entityType = EntityType::WALL;
         break;
     case 1:
-        result.entityType = EntityType::HOUSE;
+        result.entityType = EntityType::SUPPLY;
         break;
     case 2:
-        result.entityType = EntityType::BUILDER_BASE;
+        result.entityType = EntityType::BASE;
         break;
     case 3:
-        result.entityType = EntityType::BUILDER_UNIT;
+        result.entityType = EntityType::DRONE;
         break;
     case 4:
-        result.entityType = EntityType::MELEE_BASE;
+        result.entityType = EntityType::MBARRACKS;
         break;
     case 5:
-        result.entityType = EntityType::MELEE_UNIT;
+        result.entityType = EntityType::MELEE;
         break;
     case 6:
-        result.entityType = EntityType::RANGED_BASE;
+        result.entityType = EntityType::BARRACKS;
         break;
     case 7:
-        result.entityType = EntityType::RANGED_UNIT;
+        result.entityType = EntityType::RANGED;
         break;
     case 8:
         result.entityType = EntityType::RESOURCE;

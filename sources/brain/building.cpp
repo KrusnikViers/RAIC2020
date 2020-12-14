@@ -17,7 +17,7 @@ void BuildingPlanner::update() {
       (double)(state().supply_used) / state().supply_now;
   if ((supply_use_of_planned >= 0.8 && state().resource >= 200) ||
       (supply_use_of_now >= 0.95 && state().resource >= 500)) {
-    build(HOUSE);
+    build(SUPPLY);
   }
 
   run();
@@ -34,8 +34,8 @@ EntityAction BuildingPlanner::command(const Entity* entity) {
 
     if (command.target_type == RESOURCE) {
       return EntityAction(actionMove(command.drone_position, true), nullptr,
-                          actionAttack(target->id, false), nullptr);
-    } else if (command.target_type == BUILDER_UNIT) {
+                          actionAttack(target->id), nullptr);
+    } else if (command.target_type == DRONE) {
       return EntityAction(actionMove(command.drone_position, true), nullptr,
                           nullptr, nullptr);
     } else if (!target || target->entityType != command.target_type) {
@@ -54,16 +54,16 @@ EntityAction BuildingPlanner::command(const Entity* entity) {
 }
 
 void BuildingPlanner::repair() {
-  for (const auto& building : state().buildings) {
-    if (building->health < state().props.at(building->entityType).maxHealth) {
-      const auto repair_placing =
-          droneForBuilding(building->position, building->entityType);
-      if (repair_placing.second == -1) continue;
-      commands_[repair_placing.second] = Command(
-          building->position, repair_placing.first, building->entityType);
-      state().cell(repair_placing.first).drone_planned_position = true;
-    }
-  }
+  // for (const auto& building : state().buildings) {
+  //  if (building->health < state().props.at(building->entityType).maxHealth) {
+  //    const auto repair_placing =
+  //        droneForBuilding(building->position, building->entityType);
+  //    if (repair_placing.second == -1) continue;
+  //    commands_[repair_placing.second] = Command(
+  //        building->position, repair_placing.first, building->entityType);
+  //    state().cell(repair_placing.first).drone_planned_position = true;
+  //  }
+  //}
 }
 
 void BuildingPlanner::build(EntityType type) {
@@ -85,37 +85,37 @@ void BuildingPlanner::build(EntityType type) {
 }
 
 void BuildingPlanner::run() {
-  if (state().resources.size() > state().drones.size()) {
-    for (const auto* enemy : state().enemies) {
-      auto attack = state().props.at(enemy->entityType).attack;
-      if (!attack) continue;
-      const int range = attack->attackRange + 1;
-      Vec2Int smallest(std::max(0, enemy->position.x - range),
-                       std::max(0, enemy->position.y - range));
-      Vec2Int largest(
-          std::min(state().map_size, enemy->position.x + range + 1),
-          std::min(state().map_size, enemy->position.y + range + 1));
-      for (int i = smallest.x; i < largest.x; ++i) {
-        for (int j = smallest.y; j < largest.y; ++j) {
-          if (std::ceil(r_dist(Vec2Int(i, j), enemy->position)) <= range) {
-            state().cell(i, j).drone_danger_area = true;
-          }
-        }
-      }
-    }
-  }
+  // if (state().resources.size() > state().drones.size()) {
+  //  for (const auto* enemy : state().enemies) {
+  //    auto attack = state().props.at(enemy->entityType).attack;
+  //    if (!attack) continue;
+  //    const int range = attack->attackRange + 1;
+  //    Vec2Int smallest(std::max(0, enemy->position.x - range),
+  //                     std::max(0, enemy->position.y - range));
+  //    Vec2Int largest(
+  //        std::min(state().map_size, enemy->position.x + range + 1),
+  //        std::min(state().map_size, enemy->position.y + range + 1));
+  //    for (int i = smallest.x; i < largest.x; ++i) {
+  //      for (int j = smallest.y; j < largest.y; ++j) {
+  //        if (std::ceil(r_dist(Vec2Int(i, j), enemy->position)) <= range) {
+  //          state().cell(i, j).drone_danger_area = true;
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
 
-  for (const auto* drone : state().drones) {
-    if (state().cell(drone->position).drone_danger_area) {
-      if (commands_.count(drone->id)) {
-        const auto next_pos = commands_[drone->id].drone_position;
-        if (!state().cell(next_pos).drone_danger_area) continue;
-      }
-      Vec2Int new_place = nearestFreePlace(drone->position);
-      state().cell(new_place).drone_planned_position = true;
-      commands_[drone->id] = Command(new_place, new_place, BUILDER_UNIT);
-    }
-  }
+  // for (const auto* drone : state().drones) {
+  //  if (state().cell(drone->position).drone_danger_area) {
+  //    if (commands_.count(drone->id)) {
+  //      const auto next_pos = commands_[drone->id].drone_position;
+  //      if (!state().cell(next_pos).drone_danger_area) continue;
+  //    }
+  //    Vec2Int new_place = nearestFreePlace(drone->position);
+  //    state().cell(new_place).drone_planned_position = true;
+  //    commands_[drone->id] = Command(new_place, new_place, BUILDER_UNIT);
+  //  }
+  //}
 }
 
 void BuildingPlanner::dig() {
@@ -124,39 +124,40 @@ void BuildingPlanner::dig() {
                       std::greater<queue_contents>>
       orders;
 
-  const auto digging_places = diggingPlaces();
-  for (const auto* drone : state().drones) {
-    if (commands_.count(drone->id)) continue;
-    for (const auto& place : digging_places) {
-      if (state().cell(place.second).drone_danger_area ||
-          state().cell(place.second).drone_planned_position) {
-        continue;
-      }
-      orders.push(std::make_pair(
-          std::max(place.first.x, place.first.y) / 2 +
-              m_dist(drone->position, place.second),
-          std::make_pair(drone->id,
-                         Command(place.first, place.second, RESOURCE))));
-    }
-  }
+  // const auto digging_places = diggingPlaces();
+  // for (const auto* drone : state().drones) {
+  //  if (commands_.count(drone->id)) continue;
+  //  for (const auto& place : digging_places) {
+  //    if (state().cell(place.second).drone_danger_area ||
+  //        state().cell(place.second).drone_planned_position) {
+  //      continue;
+  //    }
+  //    orders.push(std::make_pair(
+  //        std::max(place.first.x, place.first.y) / 2 +
+  //            m_dist(drone->position, place.second),
+  //        std::make_pair(drone->id,
+  //                       Command(place.first, place.second, RESOURCE))));
+  //  }
+  //}
 
-  while (!orders.empty()) {
-    const auto& command = orders.top().second;
-    if (!commands_.count(command.first) &&
-        !state().cell(command.second.drone_position).drone_planned_position) {
-      commands_[command.first] = command.second;
-      state().cell(command.second.drone_position).drone_planned_position = true;
-    }
-    orders.pop();
-  }
+  // while (!orders.empty()) {
+  //  const auto& command = orders.top().second;
+  //  if (!commands_.count(command.first) &&
+  //      !state().cell(command.second.drone_position).drone_planned_position) {
+  //    commands_[command.first] = command.second;
+  //    state().cell(command.second.drone_position).drone_planned_position =
+  //    true;
+  //  }
+  //  orders.pop();
+  //}
 }
 
 void BuildingPlanner::rampage() {
-  for (const auto* drone : state().drones) {
-    if (!commands_.count(drone->id)) {
-      state().battle_units.push_back(drone);
-    }
-  }
+  // for (const auto* drone : state().drones) {
+  //  if (!commands_.count(drone->id)) {
+  //    state().battle_units.push_back(drone);
+  //  }
+  //}
 }
 
 Vec2Int BuildingPlanner::nearestFreePlace(Vec2Int pos) const {
@@ -196,27 +197,27 @@ std::vector<Vec2Int> BuildingPlanner::builderPlacings(
 
 std::pair<Vec2Int, int> BuildingPlanner::droneForBuilding(
     Vec2Int position, EntityType building_type) const {
-  int best_dist = 0;
+  // int best_dist = 0;
   std::pair<Vec2Int, int> result(Vec2Int(), -1);
 
-  const auto builders_placings = builderPlacings(position, building_type);
-  for (const auto& placing : builders_placings) {
-    for (const auto* drone : state().drones) {
-      if (commands_.count(drone->id)) continue;
+  // const auto builders_placings = builderPlacings(position, building_type);
+  // for (const auto& placing : builders_placings) {
+  //  for (const auto* drone : state().drones) {
+  //    if (commands_.count(drone->id)) continue;
 
-      if (!isFree(placing.x, placing.y) &&
-          state().cell(placing).entity->id != drone->id) {
-        continue;
-      }
+  //    if (!isFree(placing.x, placing.y) &&
+  //        state().cell(placing).entity->id != drone->id) {
+  //      continue;
+  //    }
 
-      const int d = m_dist(placing, drone->position);
-      if (result.second == -1 || d < best_dist) {
-        result.first  = placing;
-        result.second = drone->id;
-        best_dist     = d;
-      }
-    }
-  }
+  //    const int d = m_dist(placing, drone->position);
+  //    if (result.second == -1 || d < best_dist) {
+  //      result.first  = placing;
+  //      result.second = drone->id;
+  //      best_dist     = d;
+  //    }
+  //  }
+  //}
   return result;
 }
 

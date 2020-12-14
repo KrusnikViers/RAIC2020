@@ -1,7 +1,5 @@
 #include "brain/fighting.h"
 
-#include "brain/utils.h"
-
 namespace {
 
 const int kProtectedAreaFromDrone     = 10;
@@ -10,38 +8,38 @@ const int kProtectedAreaFromBuildings = 15;
 }  // namespace
 
 void FightingPlanner::update() {
-  // Regenerate per-tick stuff
-  fillHeatMap();
+  //// Regenerate per-tick stuff
+  // fillHeatMap();
 
-  attackers_.clear();
-  for (const auto* enemy : state().enemies) {
-    if (state().cell(enemy->position).protection_class == State::Protected)
-      attackers_[enemy->id] = enemy;
-  }
-  std::unordered_set<int> awaken;
-  for (const auto* unit : state().battle_units) {
-    if (guard_awaken_.count(unit->id) || !attackers_.empty() ||
-        state().resources.size() < state().initial_resource * 0.5) {
-      awaken.insert(unit->id);
-    }
-  }
-  guard_awaken_ = awaken;
+  // attackers_.clear();
+  // for (const auto* enemy : state().enemies) {
+  //  if (state().cell(enemy->position).protection_class == State::Protected)
+  //    attackers_[enemy->id] = enemy;
+  //}
+  // std::unordered_set<int> awaken;
+  // for (const auto* unit : state().battle_units) {
+  //  if (guard_awaken_.count(unit->id) || !attackers_.empty() ||
+  //      state().resources.size() < state().initial_resource * 0.5) {
+  //    awaken.insert(unit->id);
+  //  }
+  //}
+  // guard_awaken_ = awaken;
 
-  if (state().battle_units.size() > needed_army)
-    needed_army = (int)state().battle_units.size();
-  if (state().battle_units.size() < needed_army * 0.75) {
-    needed_army *= 2;
-    recovery = true;
-  } else {
-    recovery = false;
-    for (const auto* unit : state().battle_units) {
-      if (guard_awaken_.size() >= state().battle_units.size() * 0.5) {
-        break;
-      }
-      guard_awaken_.insert(unit->id);
-    }
-  }
-  if (state().battle_units.size() < needed_army / 2) critical_fight = true;
+  // if (state().battle_units.size() > needed_army)
+  //  needed_army = (int)state().battle_units.size();
+  // if (state().battle_units.size() < needed_army * 0.75) {
+  //  needed_army *= 2;
+  //  recovery = true;
+  //} else {
+  //  recovery = false;
+  //  for (const auto* unit : state().battle_units) {
+  //    if (guard_awaken_.size() >= state().battle_units.size() * 0.5) {
+  //      break;
+  //    }
+  //    guard_awaken_.insert(unit->id);
+  //  }
+  //}
+  // if (state().battle_units.size() < needed_army / 2) critical_fight = true;
 }
 
 EntityAction FightingPlanner::command(const Entity* entity) {
@@ -76,22 +74,22 @@ EntityAction FightingPlanner::command(const Entity* entity) {
 
 const Entity* FightingPlanner::getNearestEnemy(const Entity* unit, bool guard) {
   const Entity* result = nullptr;
-  int best_score       = 0;
-  bool found           = false;
-  for (const auto* enemy : state().enemies) {
-    int score = std::lround(r_dist(unit->position, enemy->position)) +
-                (enemy->entityType == BUILDER_UNIT ? 15 : 0);
-    if (attackers_.count(enemy->id)) {
-      score -=
-          (2 * state().map_size - lr_dist(enemy->position, Vec2Int(0, 0))) *
-          (2 * state().map_size - lr_dist(enemy->position, Vec2Int(0, 0)));
-    }
-    if (!found || score < best_score) {
-      found      = true;
-      best_score = score;
-      result     = enemy;
-    }
-  }
+  // int best_score       = 0;
+  // bool found           = false;
+  // for (const auto* enemy : state().enemies) {
+  //  int score = std::lround(r_dist(unit->position, enemy->position)) +
+  //              (enemy->entityType == BUILDER_UNIT ? 15 : 0);
+  //  if (attackers_.count(enemy->id)) {
+  //    score -=
+  //        (2 * state().map_size - lr_dist(enemy->position, Vec2Int(0, 0))) *
+  //        (2 * state().map_size - lr_dist(enemy->position, Vec2Int(0, 0)));
+  //  }
+  //  if (!found || score < best_score) {
+  //    found      = true;
+  //    best_score = score;
+  //    result     = enemy;
+  //  }
+  //}
   return result;
 }
 
@@ -137,32 +135,33 @@ Vec2Int FightingPlanner::getBestGuardPosition(const Entity* unit) {
 }
 
 void FightingPlanner::fillHeatMap() {
-  for (const auto* entity : state().buildings) {
-    const int size = state().props.at(entity->entityType).size;
-    Vec2Int smallest(
-        std::max(0, entity->position.x - kProtectedAreaFromBuildings),
-        std::max(0, entity->position.y - kProtectedAreaFromBuildings));
-    Vec2Int largest(
-        std::min(state().map_size,
-                 entity->position.x + size + kProtectedAreaFromBuildings + 1),
-        std::min(state().map_size,
-                 entity->position.y + size + kProtectedAreaFromBuildings + 1));
-    for (int i = smallest.x; i < largest.x; ++i) {
-      for (int j = smallest.y; j < largest.y; ++j) {
-        state().cell(i, j).protection_class = State::Protected;
-      }
-    }
-  }
+  // for (const auto* entity : state().buildings) {
+  //  const int size = state().props.at(entity->entityType).size;
+  //  Vec2Int smallest(
+  //      std::max(0, entity->position.x - kProtectedAreaFromBuildings),
+  //      std::max(0, entity->position.y - kProtectedAreaFromBuildings));
+  //  Vec2Int largest(
+  //      std::min(state().map_size,
+  //               entity->position.x + size + kProtectedAreaFromBuildings + 1),
+  //      std::min(state().map_size,
+  //               entity->position.y + size + kProtectedAreaFromBuildings +
+  //               1));
+  //  for (int i = smallest.x; i < largest.x; ++i) {
+  //    for (int j = smallest.y; j < largest.y; ++j) {
+  //      state().cell(i, j).protection_class = State::Protected;
+  //    }
+  //  }
+  //}
 
-  for (const auto& drone : state().drones) {
-    Vec2Int largest(std::min((int)state().map_size,
-                             drone->position.x + kProtectedAreaFromDrone),
-                    std::min((int)state().map_size,
-                             drone->position.y + kProtectedAreaFromDrone));
-    for (int i = 0; i < largest.x; ++i) {
-      for (int j = 0; j < largest.y; ++j) {
-        state().cell(i, j).protection_class = State::Protected;
-      }
-    }
-  }
+  // for (const auto& drone : state().drones) {
+  //  Vec2Int largest(std::min((int)state().map_size,
+  //                           drone->position.x + kProtectedAreaFromDrone),
+  //                  std::min((int)state().map_size,
+  //                           drone->position.y + kProtectedAreaFromDrone));
+  //  for (int i = 0; i < largest.x; ++i) {
+  //    for (int j = 0; j < largest.y; ++j) {
+  //      state().cell(i, j).protection_class = State::Protected;
+  //    }
+  //  }
+  //}
 }

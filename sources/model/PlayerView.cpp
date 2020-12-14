@@ -17,25 +17,25 @@ PlayerView PlayerView::readFrom(InputStream& stream) {
             entityPropertiesKey = EntityType::WALL;
             break;
         case 1:
-            entityPropertiesKey = EntityType::HOUSE;
+            entityPropertiesKey = EntityType::SUPPLY;
             break;
         case 2:
-            entityPropertiesKey = EntityType::BUILDER_BASE;
+            entityPropertiesKey = EntityType::BASE;
             break;
         case 3:
-            entityPropertiesKey = EntityType::BUILDER_UNIT;
+            entityPropertiesKey = EntityType::DRONE;
             break;
         case 4:
-            entityPropertiesKey = EntityType::MELEE_BASE;
+            entityPropertiesKey = EntityType::MBARRACKS;
             break;
         case 5:
-            entityPropertiesKey = EntityType::MELEE_UNIT;
+            entityPropertiesKey = EntityType::MELEE;
             break;
         case 6:
-            entityPropertiesKey = EntityType::RANGED_BASE;
+            entityPropertiesKey = EntityType::BARRACKS;
             break;
         case 7:
-            entityPropertiesKey = EntityType::RANGED_UNIT;
+            entityPropertiesKey = EntityType::RANGED;
             break;
         case 8:
             entityPropertiesKey = EntityType::RESOURCE;

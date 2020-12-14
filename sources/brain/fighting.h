@@ -4,6 +4,7 @@
 #include <unordered_set>
 
 #include "brain/state.h"
+#include "brain/utils.h"
 #include "model/Model.hpp"
 
 class FightingPlanner {
@@ -11,8 +12,8 @@ class FightingPlanner {
   void update();
   EntityAction command(const Entity* entity);
 
-  int needed_army = 20;
-  bool recovery = true;
+  int needed_army     = 20;
+  bool recovery       = true;
   bool critical_fight = false;
 
  private:

@@ -3,61 +3,82 @@
 #include <set>
 #include <vector>
 
+#include "brain/utils.h"
 #include "model/Model.hpp"
-#include "strategy/DebugInterface.hpp"
 
 class State {
  public:
   typedef std::vector<const Entity*> EntityList;
   typedef std::unordered_map<int, const Entity*> EntityMap;
 
+  void update(const PlayerView& view);
+
+  // Map-related stuff
+  enum CellFuturePurpose { None, Drone, Guard, Unit };
   enum CellProtectionClass { Neutral, Protected };
 
   struct MapCell {
-    const Entity* entity = nullptr;
+    CellFuturePurpose purpose   = None;
+    EntityType last_seen_entity = NONE;
+    const Entity* entity        = nullptr;
+
     CellProtectionClass protection_class;
     bool guard_planned_position;
     bool drone_planned_position;
     bool drone_danger_area;
+
+    int last_visible = -1;
   };
 
-  void update(const PlayerView& view);
-
   int map_size;
-  MapCell& cell(Vec2Int pos) { return map[pos.x][pos.y]; }
-  MapCell& cell(int x, int y) { return map[x][y]; }
+  MapCell& cell(Vec2Int pos) { return map_[pos.x][pos.y]; }
+  MapCell& cell(int x, int y) { return map_[x][y]; }
 
-  int id;
+  // Player-related stuff
+  struct OtherPlayer {
+    int id;
+    int score;
+    int resource;
+    std::unordered_map<EntityType, EntityList> units;
+  };
 
-  EntityList drones;
-  EntityList melees;
-  EntityList ranged;
-  EntityList buildings;
-
-  EntityList battle_units;
-
-  EntityList enemies;
+  std::unordered_map<EntityType, EntityList> my_units;
+  std::vector<OtherPlayer> enemies;
   EntityList resources;
+  bool has(EntityType type) const {
+    return my_units.count(type) && !my_units.at(type).empty();
+  }
+  EntityList& my(EntityType type) {
+    return my_units.count(type) ? my_units.at(type) : EntityList();
+  }
+  bool mine(const Entity* entity) const {
+    return entity->playerId && *entity->playerId == player_id_;
+  }
 
-  int initial_resource = -1;
+  // My player stuff.
   int resource;
+  int visible_resource;
   int supply_used;
   int supply_now;
   int supply_building;
 
   std::unordered_map<EntityType, EntityProperties> props;
-  EntityMap all;
+  std::unordered_map<int, const Entity*> all;
 
  private:
   void resetCell(MapCell& cell) {
     cell.entity                 = nullptr;
+    cell.purpose                = None;
     cell.protection_class       = Neutral;
     cell.guard_planned_position = false;
     cell.drone_planned_position = false;
     cell.drone_danger_area      = false;
+    ++cell.last_visible;
   }
 
-  std::vector<std::vector<MapCell>> map;
+  int player_id_;
+  std::unordered_map<int, size_t> player_index_;
+  std::vector<std::vector<MapCell>> map_;
 };
 
 // Singleton implementation. For all the methods in planners called, you can

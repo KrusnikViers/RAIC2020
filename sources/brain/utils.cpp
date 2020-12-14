@@ -13,8 +13,8 @@ bool isFree(int x, int y, IsFreeAllowance allowance) {
   const Entity* entity = state().cell(x, y).entity;
   if (!entity) return true;
 
-  if (!entity->playerId || *entity->playerId != state().id) return false;
-  if (allowance == Drone && entity->entityType == BUILDER_UNIT) return true;
+  if (state().mine(entity)) return false;
+  if (allowance == Drone && entity->entityType == DRONE) return true;
   if (allowance == Unit && state().props.at(entity->entityType).canMove)
     return true;
 
@@ -49,15 +49,25 @@ std::vector<Vec2Int> frameCells(int x, int y, int size, bool with_corners) {
   return result;
 }
 
+std::vector<Vec2Int> nearestCells(int x, int y, int radius) {
+  std::vector<Vec2Int> result;
+  for (int i = x - radius; i <= x + radius; ++i) {
+    for (int j = y - radius; j <= y + radius; ++j) {
+      if (m_dist(x, y, i, j) <= radius && !isOut(i, j))
+        result.emplace_back(i, j);
+    }
+  }
+  return result;
+}
+
+std::vector<Vec2Int> nearestCells(Vec2Int pos, int radius) {
+  return nearestCells(pos.x, pos.y, radius);
+}
+
 std::shared_ptr<MoveAction> actionMove(Vec2Int position, bool find_nearest) {
   return std::make_shared<MoveAction>(position, find_nearest, true);
 }
 
-std::shared_ptr<AttackAction> actionAttack(int target, bool autoattack) {
-  std::shared_ptr<AutoAttack> autoattack_action =
-      autoattack ? std::make_shared<AutoAttack>(8, std::vector<EntityType>())
-                 : nullptr;
-  return std::make_shared<AttackAction>(
-      target == -1 ? nullptr : std::make_shared<int>(target),
-      autoattack_action);
+std::shared_ptr<AttackAction> actionAttack(int target) {
+  return std::make_shared<AttackAction>(std::make_shared<int>(target), nullptr);
 }

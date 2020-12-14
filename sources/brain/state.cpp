@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-#include "model/DebugCommand.hpp"
-
 namespace {
 
 State instance;
@@ -13,76 +11,63 @@ State instance;
 State& state() { return instance; }
 
 void State::update(const PlayerView& view) {
+  const auto player_id_ = view.myId;
+
   // Prepare containers
-  if (map.empty()) {
-    map.resize(view.mapSize);
-    for (auto& row : map) row.resize(view.mapSize);
+  if (map_.empty()) {
+    props    = view.entityProperties;
+    map_size = view.mapSize;
+    for (const auto& player : view.players) {
+      if (player.id == player_id_) continue;
+      enemies.emplace_back();
+      enemies.back().id        = player.id;
+      player_index_[player.id] = enemies.size() - 1;
+    }
+
+    map_.resize(map_size);
+    for (auto& row : map_) row.resize(map_size);
   }
-  if (props.empty()) props = view.entityProperties;
 
-  // Reset storage
-  id = view.myId;
-  for (auto& row : map)
+  for (auto& row : map_)
     for (auto& cell : row) resetCell(cell);
-
-  all.clear();
-  drones.clear();
-  melees.clear();
-  ranged.clear();
-  buildings.clear();
-  enemies.clear();
-  resources.clear();
-  battle_units.clear();
-
-  resource = supply_used = supply_now = supply_building = 0;
-
-  // Refill storage
   for (const auto& player : view.players) {
-    if (player.id == id) {
+    if (player.id == player_id_) {
       resource = player.resource;
-      break;
+    } else {
+      enemies[player_index_[player.id]].resource = player.resource;
+      enemies[player_index_[player.id]].score    = player.score;
+      enemies[player_index_[player.id]].units.clear();
     }
   }
-  map_size = view.mapSize;
 
+  all.clear();
+  my_units.clear();
+  enemies.clear();
+  resources.clear();
+  supply_used = supply_now = supply_building = visible_resource = 0;
   for (const auto& entity : view.entities) {
     all[entity.id] = &entity;
 
-    const int entity_size = props.at(entity.entityType).size;
+    const int entity_size       = props.at(entity.entityType).size;
+    const int visibility_radius = props.at(entity.entityType).sightRange;
     for (int i = 0; i < entity_size; ++i) {
-      for (int j = 0; j < entity_size; ++j)
-        map[entity.position.x + i][entity.position.y + j].entity = &entity;
+      for (int j = 0; j < entity_size; ++j) {
+        map_[entity.position.x + i][entity.position.y + j].entity = &entity;
+        for (const auto& cell :
+             nearestCells(entity.position.x + i, entity.position.y + j,
+                          visibility_radius)) {
+          map_[cell.x][cell.y].last_visible = 0;
+        }
+      }
     }
 
     if (entity.entityType == RESOURCE) {
       resources.push_back(&entity);
-    } else if (*entity.playerId != id) {
-      enemies.push_back(&entity);
+      visible_resource += entity.health;
+    } else if (*entity.playerId != player_id_) {
+      enemies[*entity.playerId].units[entity.entityType].push_back(&entity);
     } else {
-      switch (entity.entityType) {
-        case BUILDER_UNIT:
-          drones.push_back(&entity);
-          break;
-        case MELEE_UNIT:
-          melees.push_back(&entity);
-          break;
-        case RANGED_UNIT:
-          ranged.push_back(&entity);
-          break;
-        case MELEE_BASE:
-        case RANGED_BASE:
-        case BUILDER_BASE:
-        case HOUSE:
-        case TURRET:
-        case WALL:
-          buildings.push_back(&entity);
-          break;
-      }
-
-      std::sort(melees.begin(), melees.end());
-      std::sort(ranged.begin(), ranged.end());
-      for (const auto* entity : melees) battle_units.push_back(entity);
-      for (const auto* entity : ranged) battle_units.push_back(entity);
+      my_units[entity.entityType].push_back(&entity);
 
       supply_used += props.at(entity.entityType).populationUse;
       (entity.active ? supply_now : supply_building) +=
@@ -90,5 +75,14 @@ void State::update(const PlayerView& view) {
     }
   }
 
-  if (initial_resource == -1) initial_resource = (int)resources.size();
+  for (auto& row : map_) {
+    for (auto& cell : row) {
+      if (!cell.last_visible) {
+        if (!cell.entity)
+          cell.last_seen_entity = NONE;
+        else
+          cell.last_seen_entity = cell.entity->entityType;
+      }
+    }
+  }
 }

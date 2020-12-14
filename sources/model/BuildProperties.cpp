@@ -11,25 +11,25 @@ BuildProperties BuildProperties::readFrom(InputStream& stream) {
             result.options[i] = EntityType::WALL;
             break;
         case 1:
-            result.options[i] = EntityType::HOUSE;
+            result.options[i] = EntityType::SUPPLY;
             break;
         case 2:
-            result.options[i] = EntityType::BUILDER_BASE;
+            result.options[i] = EntityType::BASE;
             break;
         case 3:
-            result.options[i] = EntityType::BUILDER_UNIT;
+            result.options[i] = EntityType::DRONE;
             break;
         case 4:
-            result.options[i] = EntityType::MELEE_BASE;
+            result.options[i] = EntityType::MBARRACKS;
             break;
         case 5:
-            result.options[i] = EntityType::MELEE_UNIT;
+            result.options[i] = EntityType::MELEE;
             break;
         case 6:
-            result.options[i] = EntityType::RANGED_BASE;
+            result.options[i] = EntityType::BARRACKS;
             break;
         case 7:
-            result.options[i] = EntityType::RANGED_UNIT;
+            result.options[i] = EntityType::RANGED;
             break;
         case 8:
             result.options[i] = EntityType::RESOURCE;
