@@ -34,10 +34,10 @@ class BuildingPlanner {
   };
 
   void repair();
+  void repair(EntityType type);
   void build(EntityType type);
   void run();
   void dig();
-  void rampage();
 
   std::vector<Vec2Int> builderPlacings(Vec2Int position,
                                        EntityType building_type) const;

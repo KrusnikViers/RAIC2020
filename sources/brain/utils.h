@@ -23,8 +23,8 @@ inline int lr_dist(const Vec2Int& p1, const Vec2Int& p2) {
 
 inline int remoteness(const Vec2Int& p) { return p.x * p.x + p.y * p.y; }
 
-enum IsFreeAllowance { None, Drone, Unit };
-bool isFree(int x, int y, IsFreeAllowance allowance = None);
+enum IsFreeAllowance { CompletelyFree, AllowDrone, AllowUnit };
+bool isFree(int x, int y, IsFreeAllowance allowance = CompletelyFree);
 bool isOut(int x, int y);
 
 std::vector<Vec2Int> frameCells(int x, int y, int size,
@@ -33,13 +33,6 @@ std::vector<Vec2Int> frameCells(const Entity* entity, bool with_corners = true);
 
 std::vector<Vec2Int> nearestCells(int x, int y, int radius);
 std::vector<Vec2Int> nearestCells(Vec2Int pos, int radius);
-
-inline Vec2Int spawnableCell(const Entity* entity) {
-  for (const auto& point : frameCells(entity, false)) {
-    if (isFree(point.x, point.y)) return point;
-  }
-  return entity->position;
-}
 
 const EntityAction kNoAction = EntityAction(nullptr, nullptr, nullptr, nullptr);
 std::shared_ptr<MoveAction> actionMove(Vec2Int position, bool find_nearest);

@@ -13,9 +13,9 @@ bool isFree(int x, int y, IsFreeAllowance allowance) {
   const Entity* entity = state().cell(x, y).entity;
   if (!entity) return true;
 
-  if (state().mine(entity)) return false;
-  if (allowance == Drone && entity->entityType == DRONE) return true;
-  if (allowance == Unit && state().props.at(entity->entityType).canMove)
+  if (!state().mine(entity)) return false;
+  if (allowance == AllowDrone && entity->entityType == DRONE) return true;
+  if (allowance == AllowUnit && state().props.at(entity->entityType).canMove)
     return true;
 
   return false;

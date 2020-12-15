@@ -14,7 +14,7 @@ results = [[0, 0],
 positions_of_clients = list(itertools.permutations([0, 1, 2, 3]))
 script_start_time = time.time()
 
-RUNS_COUNT = len(positions_of_clients)
+RUNS_COUNT = len(positions_of_clients) * 4
 OUTPUT_FILE = "batch-results.txt"
 
 
