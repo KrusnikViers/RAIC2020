@@ -205,17 +205,25 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
       int changes                = 0;
       bool has_place_for_builder = false;
       for (const auto& point : frame_cells) {
-        const bool now_free = isFree(point.x, point.y, AllowUnit);
-        if (now_free && state().cell(point).purpose != DronePosition) {
+        if (!isFree(point.x, point.y, AllowUnit) && !isOut(point.x, point.y)) {
+          safe_space = false;
+        }
+        if (!isOut(point.x, point.y) &&
+            state().cell(point).purpose == NoPurpose) {
           has_place_for_builder = true;
         }
+        const bool now_free = isFree(point.x, point.y, AllowUnit);
         if (now_free != prev_free) {
           ++changes;
           prev_free = now_free;
         }
       }
-      if (changes > 2) continue;
-      if (changes == 0 && !prev_free) continue;
+      if (size < 4) {
+        if (changes > 2) continue;
+        if (changes == 0 && !prev_free) continue;
+      } else {
+        if (!safe_space) continue;
+      }
       if (!has_place_for_builder) continue;
 
       int drone_score = -1;

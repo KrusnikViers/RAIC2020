@@ -13,6 +13,7 @@ class FightingPlanner {
   EntityAction command(const Entity* entity);
 
  private:
+  const Entity* getTargetedEnemy(const Entity* unit);
   const Entity* getNearestEnemy(const Entity* unit);
   Vec2Int getLeastKnownPosition(const Entity* unit);
 };

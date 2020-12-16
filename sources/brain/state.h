@@ -58,6 +58,9 @@ class State {
   std::unordered_map<EntityType, EntityProperties> props;
   std::unordered_map<int, const Entity*> all;
 
+  std::unordered_map<int, std::vector<const Entity*>> targeted;
+  std::unordered_map<int, int> planned_damage;
+
  private:
   void resetCell(MapCell& cell) {
     cell.entity        = nullptr;

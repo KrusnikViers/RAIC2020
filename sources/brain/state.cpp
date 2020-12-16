@@ -26,6 +26,9 @@ void State::update(const PlayerView& view) {
   supply_used = supply_now = supply_building = visible_resource = 0;
   production_queue.clear();
 
+  targeted.clear();
+  planned_damage.clear();
+
   updateEntities(view);
 
   for (auto& row : map_) {
@@ -100,6 +103,15 @@ void State::updateEntities(const PlayerView& view) {
             map_[cell.x][cell.y].last_visible = 0;
           }
         }
+      }
+    }
+  }
+
+  const int attack_radius = props[RANGED].attack->attackRange;
+  for (const auto& unit : my(RANGED)) {
+    for (const auto& enemy_unit : enemies) {
+      if (m_dist(enemy_unit->position, unit->position) <= attack_radius) {
+        targeted[unit->id].push_back(enemy_unit);
       }
     }
   }
