@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <unordered_set>
 #include <vector>
 
 #include "brain/utils.h"
@@ -52,8 +53,7 @@ class State {
   int supply_now;
   int supply_building;
 
-  bool supply_required;
-  bool barracks_required;
+  std::unordered_set<EntityType> production_queue;
 
   std::unordered_map<EntityType, EntityProperties> props;
   std::unordered_map<int, const Entity*> all;

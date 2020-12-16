@@ -24,7 +24,7 @@ void State::update(const PlayerView& view) {
   enemies.clear();
   resources.clear();
   supply_used = supply_now = supply_building = visible_resource = 0;
-  supply_required = barracks_required = false;
+  production_queue.clear();
 
   updateEntities(view);
 
@@ -50,6 +50,11 @@ void State::maybeInit(const PlayerView& view) {
 
   map_.resize(map_size);
   for (auto& row : map_) row.resize(map_size);
+
+  // Give some bonus to the enemy bases location to check them first.
+  map_[0].back().last_visible     = 100;
+  map_.back()[0].last_visible     = 100;
+  map_.back().back().last_visible = 50;
 }
 
 void State::updateEntities(const PlayerView& view) {

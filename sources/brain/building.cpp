@@ -7,15 +7,10 @@
 
 void BuildingPlanner::update() {
   commands_.clear();
-
   repair();
-
-  if (!state().has(BASE)) build(BASE);
-  if (state().barracks_required) build(BARRACKS);
-  if (state().supply_required) build(SUPPLY);
-
+  for (EntityType type : {BASE, BARRACKS, SUPPLY})
+    if (state().production_queue.count(type)) build(type);
   run();
-
   dig();
 }
 
@@ -192,7 +187,8 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
       for (int io = 0; io < size; ++io) {
         for (int jo = 0; jo < size; ++jo) {
           if (!isFree(i + io, j + jo, AllowDrone) ||
-              state().cell(i + io, j + jo).attack_status != Safe) {
+              state().cell(i + io, j + jo).attack_status != Safe ||
+              state().cell(i + io, j + jo).purpose != NoPurpose) {
             safe_space = false;
             break;
           }

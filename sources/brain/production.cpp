@@ -2,8 +2,7 @@
 
 namespace {
 
-int drones_limit = -1;
-int supply_limit = -1;
+int resource_dispatched = 0;
 
 Vec2Int spawnableCell(const Entity* entity) {
   for (const auto& point : frameCells(entity, false)) {
@@ -13,35 +12,98 @@ Vec2Int spawnableCell(const Entity* entity) {
   return entity->position;
 }
 
+int unitCost(EntityType type) {
+  return state().props[type].initialCost +
+         (state().props[type].canMove ? (int)state().my(type).size() : 0);
+}
+
+bool canMakeUnit(EntityType type) {
+  return state().resource - resource_dispatched >= unitCost(type) &&
+         state().supply_used < state().supply_now;
+}
+
+bool needDrone() {
+  if (!canMakeUnit(DRONE)) return false;
+
+  static const int drones_limit = lround(state().map_size * 0.75);
+  if (state().my(DRONE).size() >= drones_limit) return false;
+
+  // Too few resources left to make more drones.
+  if (state().visible_resource <
+      state().my(DRONE).size() * 4 * state().props[RESOURCE].maxHealth)
+    return false;
+
+  // If we have no barracks yet, build only drones.
+  if (!state().has(BARRACKS)) return true;
+
+  // From 20-40 to 60 drones should be build on par with ranged.
+  if (state().my(DRONE).size() <= state().my(RANGED).size() + 30) return true;
+
+  // If no conditions met, we're done.
+  return false;
+}
+
+bool needRanged() {
+  if (!canMakeUnit(RANGED)) return false;
+
+  // Drones already have priority, so not limit for that one.
+  return true;
+}
+
+bool needSupply() {
+  if (state().resource - resource_dispatched <
+      state().props[SUPPLY].initialCost)
+    return false;
+
+  static const int supply_limit = lround(state().map_size * 1.5);
+  if (state().supply_now + state().supply_building >= supply_limit)
+    return false;
+
+  // Better keep saving for rush when current one is built.
+  // Better keep saving for rush when current one is built.
+  if (state().resource < state().supply_building * 30) return false;
+
+  if (state().supply_now * 0.8 < state().supply_used) return true;
+
+  return false;
+}
+
 }  // namespace
 
 void ProductionPlanner::update() {
-  if (drones_limit == -1) {
-    drones_limit = lround(state().map_size * 0.75);
-    supply_limit = lround(state().map_size * 1.5);
-  }
+  // Make an assumption that workers are busy digging, to plan slightly ahead.
+  resource_dispatched = -(int)state().my(DRONE).size();
+
+  // We need a base all right. Builders will try to do that ASAP, so just
+  // return.
+  if (!state().has(BASE)) return;
 
   if (!state().has(BARRACKS) && state().supply_now >= 20) {
-    state().barracks_required = true;
+    // If we are here and do not have resources -- keep saving!
+    state().production_queue.insert(BARRACKS);
+    resource_dispatched += unitCost(BARRACKS);
   }
 
-  const int planned_supply = state().supply_now + state().supply_building;
-  if (planned_supply < supply_limit) {
-    if (!state().barracks_required || state().resource >= 600) {
-      if (state().resource >= 50 * state().supply_building &&
-          state().supply_used >= 0.8 * state().supply_now) {
-        state().supply_required = true;
-      }
-    }
+  if (needDrone()) {
+    resource_dispatched += unitCost(DRONE);
+    state().production_queue.insert(DRONE);
+  }
+
+  if (needRanged()) {
+    resource_dispatched += unitCost(RANGED);
+    state().production_queue.insert(RANGED);
+  }
+
+  if (needSupply()) {
+    resource_dispatched += unitCost(SUPPLY);
+    state().production_queue.insert(SUPPLY);
   }
 }
 
 EntityAction ProductionPlanner::command(const Entity* entity) {
   switch (entity->entityType) {
     case BASE:
-      if (state().my(DRONE).size() >= drones_limit) return kNoAction;
-      if (state().supply_now <= 20 ||
-          state().my(DRONE).size() + 40 < state().my(RANGED).size()) {
+      if (state().production_queue.count(DRONE)) {
         return EntityAction(
             nullptr,
             std::make_shared<BuildAction>(DRONE, spawnableCell(entity)),
@@ -50,9 +112,13 @@ EntityAction ProductionPlanner::command(const Entity* entity) {
       return kNoAction;
 
     case BARRACKS:
-      return EntityAction(
-          nullptr, std::make_shared<BuildAction>(RANGED, spawnableCell(entity)),
-          nullptr, nullptr);
+      if (state().production_queue.count(RANGED)) {
+        return EntityAction(
+            nullptr,
+            std::make_shared<BuildAction>(RANGED, spawnableCell(entity)),
+            nullptr, nullptr);
+      }
+      return kNoAction;
 
     default:
       return kNoAction;
