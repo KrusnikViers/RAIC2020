@@ -28,11 +28,7 @@ std::vector<Vec2Int> frameCells(const Entity* entity, bool with_corners) {
 
 std::vector<Vec2Int> frameCells(int x, int y, int size, bool with_corners) {
   static const std::vector<Vec2Int> offsets = {
-      {1, 0},
-      {0, 1},
-      {-1, 0},
-      {0, -1},
-  };
+      {1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 
   std::vector<Vec2Int> result;
   result.reserve((size + (with_corners ? 1 : 0)) * 4);

@@ -60,7 +60,6 @@ bool needSupply() {
     return false;
 
   // Better keep saving for rush when current one is built.
-  // Better keep saving for rush when current one is built.
   if (state().resource < state().supply_building * 30) return false;
 
   if (state().supply_now * 0.8 < state().supply_used) return true;

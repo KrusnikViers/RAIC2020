@@ -12,17 +12,6 @@ inline int m_dist(int x1, int y1, int x2, int y2) {
   return std::abs(x1 - x2) + std::abs(y1 - y2);
 }
 
-inline double r_dist(const Vec2Int& p1, const Vec2Int& p2) {
-  return std::sqrt((p1.x - p2.x) * (p1.x - p2.x) +
-                   (p1.y - p2.y) * (p1.y - p2.y));
-}
-
-inline int lr_dist(const Vec2Int& p1, const Vec2Int& p2) {
-  return std::lround(r_dist(p1, p2));
-}
-
-inline int remoteness(const Vec2Int& p) { return p.x * p.x + p.y * p.y; }
-
 enum IsFreeAllowance { CompletelyFree, AllowDrone, AllowUnit };
 bool isFree(int x, int y, IsFreeAllowance allowance = CompletelyFree);
 bool isOut(int x, int y);

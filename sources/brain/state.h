@@ -10,6 +10,15 @@
 enum CellFuturePurpose { NoPurpose, DronePosition, UnitPosition };
 enum CellAttackStatus { Safe, Threat, Attack };
 
+struct RouteDirection {
+  int distance    = 100000;
+  int8_t offset_x = 0;
+  int8_t offset_y = 0;
+};
+
+template <class T>
+using map_t = std::vector<std::vector<T>>;
+
 class State {
  public:
   typedef std::vector<const Entity*> EntityList;
@@ -61,6 +70,8 @@ class State {
   std::unordered_map<int, std::vector<const Entity*>> targeted;
   std::unordered_map<int, int> planned_damage;
 
+  const map_t<RouteDirection>& mapFor(const Entity* entity);
+
  private:
   void resetCell(MapCell& cell) {
     cell.entity        = nullptr;
@@ -71,9 +82,12 @@ class State {
 
   void maybeInit(const PlayerView& view);
   void updateEntities(const PlayerView& view);
+  void buildMap(map_t<RouteDirection>& layer, const Entity* entity);
 
   int player_id_;
-  std::vector<std::vector<MapCell>> map_;
+  map_t<MapCell> map_;
+  std::vector<map_t<RouteDirection>> maps_cache_;
+  std::unordered_map<int, int> map_ids_;
   EntityList dummy_;
 };
 

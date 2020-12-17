@@ -13,6 +13,8 @@ SET (MY_SOURCES
     "sources/brain/fighting.h"
     "sources/brain/production.cpp"
     "sources/brain/production.h"
+    "sources/brain/routing.cpp"
+    "sources/brain/routing.h"
     "sources/brain/state.cpp"
     "sources/brain/state.h"
     "sources/brain/utils.cpp"

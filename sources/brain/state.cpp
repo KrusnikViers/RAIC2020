@@ -1,12 +1,30 @@
 #include "brain/state.h"
 
 #include <algorithm>
+#include <queue>
 
 namespace {
 
 State instance;
 
-}
+struct PathNode {
+  PathNode()                      = default;
+  PathNode(const PathNode& other) = default;
+  PathNode(const int score, int x, int y, int offset_x, int offset_y)
+      : score(score), x(x), y(y), offset_x(offset_x), offset_y(offset_y) {}
+
+  bool operator<(const PathNode& other) const {
+    if (score != other.score) return score < other.score;
+    if (x != other.x) return x < other.x;
+    return y < other.y;
+  }
+
+  int score;
+  int x, y;
+  int offset_x, offset_y;
+};
+
+}  // namespace
 
 State& state() { return instance; }
 
@@ -28,6 +46,10 @@ void State::update(const PlayerView& view) {
 
   targeted.clear();
   planned_damage.clear();
+  map_ids_.clear();
+
+  for (auto& row : map_)
+    for (auto& cell : row) ++cell.last_visible;
 
   updateEntities(view);
 
@@ -112,6 +134,77 @@ void State::updateEntities(const PlayerView& view) {
     for (const auto& enemy_unit : enemies) {
       if (m_dist(enemy_unit->position, unit->position) <= attack_radius) {
         targeted[unit->id].push_back(enemy_unit);
+      }
+    }
+  }
+}
+
+const map_t<RouteDirection>& State::mapFor(const Entity* entity) {
+  if (map_ids_.count(entity->id)) return maps_cache_[map_ids_[entity->id]];
+
+  const int current_id = (int)map_ids_.size();
+  map_ids_[entity->id] = current_id;
+  if (map_ids_.size() > maps_cache_.size()) {
+    maps_cache_.emplace_back();
+    maps_cache_.back().resize(map_size);
+    for (auto& row : maps_cache_.back()) row.resize(map_size);
+  }
+
+  buildMap(maps_cache_[map_ids_[entity->id]], entity);
+  return maps_cache_[map_ids_[entity->id]];
+}
+
+void State::buildMap(map_t<RouteDirection>& layer, const Entity* entity) {
+  const int resource_weight = props[RESOURCE].maxHealth / 5;
+  const int kInfinity       = 100000;
+  for (auto& row : layer) {
+    for (auto& cell : row) cell = RouteDirection();
+  }
+  layer[entity->position.x][entity->position.y] = {0, 0, 0};
+
+  auto getNode = [&layer](int x, int y) {
+    return PathNode(layer[x][y].distance, x, y,  //
+                    layer[x][y].offset_x, layer[x][y].offset_y);
+  };
+
+  std::set<PathNode> nodes_to_see;
+  nodes_to_see.insert(getNode(entity->position.x, entity->position.y));
+
+  while (!nodes_to_see.empty()) {
+    int score = nodes_to_see.begin()->score;
+    int x     = nodes_to_see.begin()->x;
+    int y     = nodes_to_see.begin()->y;
+    Vec2Int node_offset(nodes_to_see.begin()->offset_x,
+                        nodes_to_see.begin()->offset_y);
+    nodes_to_see.erase(nodes_to_see.begin());
+
+    for (const auto& offset :
+         {Vec2Int(-1, 0), Vec2Int(1, 0), Vec2Int(0, -1), Vec2Int(0, 1)}) {
+      Vec2Int n(x + offset.x, y + offset.y);
+      if (isOut(n.x, n.y)) continue;
+      int bonus = -1;
+      if ((!cell(n).last_visible && !cell(n).entity) ||
+          (cell(n).last_visible && cell(n).last_seen_entity != RESOURCE)) {
+        bonus = 1;
+      } else if (cell(n).last_seen_entity == RESOURCE) {
+        bonus = resource_weight;
+      }
+
+      if (bonus == -1) continue;
+      if (score + bonus < layer[n.x][n.y].distance) {
+        if (layer[n.x][n.y].distance != kInfinity) {
+          auto old_node = getNode(n.x, n.y);
+          nodes_to_see.erase(old_node);
+        }
+        layer[n.x][n.y].distance = score + bonus;
+        if (!node_offset.x && !node_offset.y) {
+          layer[n.x][n.y].offset_x = offset.x;
+          layer[n.x][n.y].offset_y = offset.y;
+        } else {
+          layer[n.x][n.y].offset_x = node_offset.x;
+          layer[n.x][n.y].offset_y = node_offset.y;
+        }
+        nodes_to_see.insert(getNode(n.x, n.y));
       }
     }
   }
