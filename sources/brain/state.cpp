@@ -106,7 +106,7 @@ void State::updateEntities(const PlayerView& view) {
       for (const auto& cell_pos :
            nearestCells(entity.position, attack_zone + 2)) {
         cell(cell_pos).attack_status =
-            m_dist(cell_pos, entity.position) <= attack_zone ? Attack : Threat;
+            dist(cell_pos, entity.position) <= attack_zone ? Attack : Threat;
       }
 
     } else {
@@ -132,7 +132,7 @@ void State::updateEntities(const PlayerView& view) {
   const int attack_radius = props[RANGED].attack->attackRange;
   for (const auto& unit : my(RANGED)) {
     for (const auto& enemy_unit : enemies) {
-      if (m_dist(enemy_unit->position, unit->position) <= attack_radius) {
+      if (dist(enemy_unit->position, unit->position) <= attack_radius) {
         targeted[unit->id].push_back(enemy_unit);
       }
     }

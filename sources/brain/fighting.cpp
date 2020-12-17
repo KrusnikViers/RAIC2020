@@ -65,7 +65,7 @@ const Entity* FightingPlanner::getNearestEnemy(const Entity* unit) {
   const Entity* result = nullptr;
   int best_score       = -1;
   for (const auto* enemy : state().enemies) {
-    int score = m_dist(unit->position, enemy->position);
+    int score = dist(unit->position, enemy->position);
     if (enemy->entityType == DRONE) score -= 15;
 
     if (best_score == -1 || score < best_score) {

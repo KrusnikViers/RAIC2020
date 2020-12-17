@@ -49,8 +49,7 @@ std::vector<Vec2Int> nearestCells(int x, int y, int radius) {
   std::vector<Vec2Int> result;
   for (int i = x - radius; i <= x + radius; ++i) {
     for (int j = y - radius; j <= y + radius; ++j) {
-      if (m_dist(x, y, i, j) <= radius && !isOut(i, j))
-        result.emplace_back(i, j);
+      if (dist(x, y, i, j) <= radius && !isOut(i, j)) result.emplace_back(i, j);
     }
   }
   return result;

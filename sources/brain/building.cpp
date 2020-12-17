@@ -102,7 +102,7 @@ void BuildingPlanner::dig() {
     for (const auto& place : digging_places) {
       orders.push(std::make_pair(
           std::max(place.first.x, place.first.y) / 4 +
-              m_dist(drone->position, place.second),
+              dist(drone->position, place.second),
           std::make_pair(drone->id,
                          Command(place.first, place.second, RESOURCE))));
     }
@@ -130,7 +130,7 @@ Vec2Int BuildingPlanner::nearestFreePlace(Vec2Int pos) const {
           state().cell(i, j).attack_status != Safe) {
         continue;
       }
-      if (!found || m_dist(new_pos, pos) < m_dist(result, pos)) {
+      if (!found || dist(new_pos, pos) < dist(result, pos)) {
         result = new_pos;
         found  = true;
       }
@@ -163,7 +163,7 @@ std::pair<Vec2Int, int> BuildingPlanner::droneForBuilding(
   for (const auto& placing : builders_placings) {
     for (const auto* drone : state().my(DRONE)) {
       if (commands_.count(drone->id)) continue;
-      const int d = m_dist(placing, drone->position);
+      const int d = dist(placing, drone->position);
       if (result.second == -1 || d < best_dist) {
         result.first  = placing;
         result.second = drone->id;
@@ -229,15 +229,14 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
       int drone_score = -1;
       for (const auto& drone : state().my(DRONE)) {
         if (commands_.count(drone->id)) continue;
-        const int drone_dist =
-            std::max(size + 1, m_dist(drone->position, cpos));
+        const int drone_dist = std::max(size + 1, dist(drone->position, cpos));
         if (drone_score == -1 || drone_dist < drone_score)
           drone_score = drone_dist;
       }
 
       // We don't actually have any free drones, in this case.
       if (drone_score == -1) return best_result;
-      int score = m_dist(cpos, Vec2Int(0, 0)) / 4 + drone_score;
+      int score = dist(cpos, Vec2Int(0, 0)) / 4 + drone_score;
       if (best_score == -1 || score < best_score) {
         best_score  = score;
         best_result = cpos;

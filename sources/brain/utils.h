@@ -4,11 +4,11 @@
 
 #include "model/Model.hpp"
 
-inline int m_dist(const Vec2Int& p1, const Vec2Int& p2) {
+inline int dist(const Vec2Int& p1, const Vec2Int& p2) {
   return std::abs(p1.x - p2.x) + std::abs(p1.y - p2.y);
 }
 
-inline int m_dist(int x1, int y1, int x2, int y2) {
+inline int dist(int x1, int y1, int x2, int y2) {
   return std::abs(x1 - x2) + std::abs(y1 - y2);
 }
 
