@@ -17,7 +17,7 @@ void BuildingPlanner::update() {
 EntityAction BuildingPlanner::command(const Entity* entity) {
   if (commands_.count(entity->id)) {
     const Command& command = commands_[entity->id];
-    const Entity* target   = state().cell(command.target_position).entity;
+    const Entity* target   = cell(command.target_position).entity;
     if (command.target_type == RESOURCE) {
       return EntityAction(actionMove(command.drone_position, false), nullptr,
                           actionAttack(target->id), nullptr);
@@ -45,35 +45,35 @@ void BuildingPlanner::repair() {
 }
 
 void BuildingPlanner::repair(EntityType type) {
-  const int size = state().props[type].size;
+  const int size = props()[type].size;
   for (const auto* building : state().my(type)) {
-    if (building->health == state().props[type].maxHealth) continue;
+    if (building->health == props()[type].maxHealth) continue;
     int repair_drones = (size + 1) / 2;
     for (int i = 0; i < repair_drones; ++i) {
       const auto repair_placing = droneForBuilding(building->position, type);
       if (repair_placing.second == -1) break;
       commands_[repair_placing.second] =
           Command(building->position, repair_placing.first, type);
-      state().cell(repair_placing.first).purpose = DronePosition;
+      cell(repair_placing.first).purpose = DronePosition;
     }
   }
 }
 
 void BuildingPlanner::build(EntityType type) {
-  if (state().resource < state().props[type].initialCost) return;
+  if (state().resource < props()[type].initialCost) return;
   Vec2Int best_place = nearestFreePlacing(type);
   if (best_place.x == -1) return;
 
-  const int size           = state().props.at(type).size;
+  const int size           = props().at(type).size;
   const auto build_placing = droneForBuilding(best_place, type);
   if (build_placing.second == -1) return;
 
   commands_[build_placing.second] =
       Command(best_place, build_placing.first, type);
-  state().cell(build_placing.first).purpose = DronePosition;
+  cell(build_placing.first).purpose = DronePosition;
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
-      state().cell(best_place.x + i, best_place.y + j).attack_status = Threat;
+      cell(best_place.x + i, best_place.y + j).attack_status = Threat;
     }
   }
 }
@@ -81,10 +81,10 @@ void BuildingPlanner::build(EntityType type) {
 void BuildingPlanner::run() {
   for (const auto* drone : state().my(DRONE)) {
     if (commands_.count(drone->id)) continue;
-    if (state().cell(drone->position).attack_status != Safe) {
-      Vec2Int new_place               = nearestFreePlace(drone->position);
-      state().cell(new_place).purpose = DronePosition;
-      commands_[drone->id]            = Command(new_place, new_place, DRONE);
+    if (cell(drone->position).attack_status != Safe) {
+      Vec2Int new_place       = nearestFreePlace(drone->position);
+      cell(new_place).purpose = DronePosition;
+      commands_[drone->id]    = Command(new_place, new_place, DRONE);
     }
   }
 }
@@ -111,9 +111,9 @@ void BuildingPlanner::dig() {
   while (!orders.empty()) {
     const auto& command = orders.top().second;
     if (!commands_.count(command.first) &&
-        !state().cell(command.second.drone_position).purpose != NoPurpose) {
-      commands_[command.first]                            = command.second;
-      state().cell(command.second.drone_position).purpose = DronePosition;
+        !cell(command.second.drone_position).purpose != NoPurpose) {
+      commands_[command.first]                    = command.second;
+      cell(command.second.drone_position).purpose = DronePosition;
     }
     orders.pop();
   }
@@ -122,12 +122,11 @@ void BuildingPlanner::dig() {
 Vec2Int BuildingPlanner::nearestFreePlace(Vec2Int pos) const {
   bool found     = false;
   Vec2Int result = pos;
-  for (int i = 0; i < state().map_size; ++i) {
-    for (int j = 0; j < state().map_size; ++j) {
+  for (int i = 0; i < map().size; ++i) {
+    for (int j = 0; j < map().size; ++j) {
       const Vec2Int new_pos(i, j);
-      if (!isFree(new_pos.x, new_pos.y) ||
-          state().cell(i, j).purpose != NoPurpose ||
-          state().cell(i, j).attack_status != Safe) {
+      if (!isFree(new_pos.x, new_pos.y) || cell(i, j).purpose != NoPurpose ||
+          cell(i, j).attack_status != Safe) {
         continue;
       }
       if (!found || dist(new_pos, pos) < dist(result, pos)) {
@@ -141,14 +140,14 @@ Vec2Int BuildingPlanner::nearestFreePlace(Vec2Int pos) const {
 
 std::vector<Vec2Int> BuildingPlanner::builderPlacings(
     Vec2Int position, EntityType building_type) const {
-  const auto free_cells = frameCells(
-      position.x, position.y, state().props.at(building_type).size, false);
+  const auto free_cells =
+      frameCells(position.x, position.y, props().at(building_type).size, false);
   std::vector<Vec2Int> cells_available;
-  for (const auto& cell : free_cells) {
-    if (isFree(cell.x, cell.y, AllowDrone) &&
-        state().cell(cell).purpose == NoPurpose &&
-        state().cell(cell).attack_status == Safe) {
-      cells_available.push_back(cell);
+  for (const auto& cell_pos : free_cells) {
+    if (isFree(cell_pos.x, cell_pos.y, AllowDrone) &&
+        cell(cell_pos).purpose == NoPurpose &&
+        cell(cell_pos).attack_status == Safe) {
+      cells_available.push_back(cell_pos);
     }
   }
   return cells_available;
@@ -177,18 +176,18 @@ std::pair<Vec2Int, int> BuildingPlanner::droneForBuilding(
 Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
   int best_score = -1;
   Vec2Int best_result(-1, -1);
-  const int size = state().props.at(type).size;
+  const int size = props().at(type).size;
 
-  for (int i = 0; i < state().map_size - size; ++i) {
-    for (int j = 0; j < state().map_size - size; ++j) {
+  for (int i = 0; i < map().size - size; ++i) {
+    for (int j = 0; j < map().size - size; ++j) {
       Vec2Int cpos(i, j);
       // Whole space should be safe and free or contain only worker drones.
       bool safe_space = true;
       for (int io = 0; io < size; ++io) {
         for (int jo = 0; jo < size; ++jo) {
           if (!isFree(i + io, j + jo, AllowDrone) ||
-              state().cell(i + io, j + jo).attack_status != Safe ||
-              state().cell(i + io, j + jo).purpose != NoPurpose) {
+              cell(i + io, j + jo).attack_status != Safe ||
+              cell(i + io, j + jo).purpose != NoPurpose) {
             safe_space = false;
             break;
           }
@@ -208,8 +207,7 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
         if (!isFree(point.x, point.y, AllowUnit) && !isOut(point.x, point.y)) {
           safe_space = false;
         }
-        if (!isOut(point.x, point.y) &&
-            state().cell(point).purpose == NoPurpose) {
+        if (!isOut(point.x, point.y) && cell(point).purpose == NoPurpose) {
           has_place_for_builder = true;
         }
         const bool now_free = isFree(point.x, point.y, AllowUnit);
@@ -253,8 +251,8 @@ std::vector<std::pair<Vec2Int, Vec2Int>> BuildingPlanner::diggingPlaces()
   for (const auto* resource : state().resources) {
     for (const auto& point : frameCells(resource, false)) {
       if (isFree(point.x, point.y, AllowDrone) &&
-          state().cell(point).attack_status == Safe &&
-          state().cell(point).purpose == NoPurpose) {
+          cell(point).attack_status == Safe &&
+          cell(point).purpose == NoPurpose) {
         results.push_back(std::make_pair(resource->position, point));
       }
     }

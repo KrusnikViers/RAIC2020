@@ -6,15 +6,15 @@ int resource_dispatched = 0;
 
 Vec2Int spawnableCell(const Entity* entity) {
   for (const auto& point : frameCells(entity, false)) {
-    if (isFree(point.x, point.y) && state().cell(point).purpose == NoPurpose)
+    if (isFree(point.x, point.y) && cell(point).purpose == NoPurpose)
       return point;
   }
   return entity->position;
 }
 
 int unitCost(EntityType type) {
-  return state().props[type].initialCost +
-         (state().props[type].canMove ? (int)state().my(type).size() : 0);
+  return props()[type].initialCost +
+         (props()[type].canMove ? (int)state().my(type).size() : 0);
 }
 
 bool canMakeUnit(EntityType type) {
@@ -25,12 +25,12 @@ bool canMakeUnit(EntityType type) {
 bool needDrone() {
   if (!canMakeUnit(DRONE)) return false;
 
-  static const int drones_limit = lround(state().map_size * 0.75);
+  static const int drones_limit = lround(map().size * 0.75);
   if (state().my(DRONE).size() >= drones_limit) return false;
 
   // Too few resources left to make more drones.
   if (state().visible_resource <
-      state().my(DRONE).size() * 4 * state().props[RESOURCE].maxHealth)
+      state().my(DRONE).size() * 4 * props()[RESOURCE].maxHealth)
     return false;
 
   // If we have no barracks yet, build only drones.
@@ -52,10 +52,10 @@ bool needRanged() {
 
 bool needSupply() {
   if (state().resource - resource_dispatched <
-      state().props[SUPPLY].initialCost)
+      props()[SUPPLY].initialCost)
     return false;
 
-  static const int supply_limit = lround(state().map_size * 1.5);
+  static const int supply_limit = lround(map().size * 1.5);
   if (state().supply_now + state().supply_building >= supply_limit)
     return false;
 

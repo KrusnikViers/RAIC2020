@@ -3,19 +3,19 @@
 #include "brain/state.h"
 
 bool isOut(int x, int y) {
-  static const int map_size = state().map_size;
+  static const int map_size = map().size;
   return x < 0 || y < 0 || x >= map_size || y >= map_size;
 }
 
 bool isFree(int x, int y, IsFreeAllowance allowance) {
   if (isOut(x, y)) return false;
 
-  const Entity* entity = state().cell(x, y).entity;
+  const Entity* entity = cell(x, y).entity;
   if (!entity) return true;
 
   if (!state().mine(entity)) return false;
   if (allowance == AllowDrone && entity->entityType == DRONE) return true;
-  if (allowance == AllowUnit && state().props.at(entity->entityType).canMove)
+  if (allowance == AllowUnit && props().at(entity->entityType).canMove)
     return true;
 
   return false;
@@ -23,7 +23,7 @@ bool isFree(int x, int y, IsFreeAllowance allowance) {
 
 std::vector<Vec2Int> frameCells(const Entity* entity, bool with_corners) {
   return frameCells(entity->position.x, entity->position.y,
-                    state().props.at(entity->entityType).size, with_corners);
+                    props().at(entity->entityType).size, with_corners);
 }
 
 std::vector<Vec2Int> frameCells(int x, int y, int size, bool with_corners) {

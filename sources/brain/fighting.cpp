@@ -34,7 +34,7 @@ EntityAction FightingPlanner::command(const Entity* entity) {
 const Entity* FightingPlanner::getTargetedEnemy(const Entity* unit) {
   if (!state().targeted.count(unit->id)) return nullptr;
 
-  const int attack_power = state().props[unit->entityType].attack->damage;
+  const int attack_power = props()[unit->entityType].attack->damage;
 
   int best_score                = -1;
   const Entity* resulting_enemy = nullptr;
@@ -78,12 +78,12 @@ const Entity* FightingPlanner::getNearestEnemy(const Entity* unit) {
 
 Vec2Int FightingPlanner::getLeastKnownPosition(const Entity* unit) {
   int score = -1;
-  Vec2Int best_result(state().map_size / 2, state().map_size / 2);
-  for (int i = 0; i < state().map_size; ++i) {
-    for (int j = 0; j < state().map_size; ++j) {
-      const int last_visible = state().cell(i, j).last_visible;
-      if (last_visible && (score == -1 || last_visible >= score)) {
-        score       = last_visible;
+  Vec2Int best_result(map().size / 2, map().size / 2);
+  for (int i = 0; i < map().size; ++i) {
+    for (int j = 0; j < map().size; ++j) {
+      const int blind_counter = cell(i, j).blind_counter;
+      if (blind_counter && (score == -1 || blind_counter >= score)) {
+        score       = blind_counter;
         best_result = Vec2Int(i, j);
       }
     }
