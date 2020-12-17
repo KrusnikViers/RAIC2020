@@ -1,5 +1,7 @@
 #include "brain/routing.h"
 
+#include <queue>
+
 #include "brain/state.h"
 
 namespace {
@@ -13,7 +15,7 @@ Map& map() { return g_map; }
 void Map::update(const PlayerView& view) {
   maybeInit(view);
 
-  cache_index_for_entity_.clear();
+  //cache_index_for_entity_.clear();
 
   // Reset map and increase blind counters
   for (auto& row : map_) {
@@ -51,8 +53,7 @@ void Map::update(const PlayerView& view) {
     } else {
       // Attack status
       if (!props().at(entity->entityType).attack) continue;
-      const int attack_range =
-          props()[entity->entityType].attack->attackRange;
+      const int attack_range = props()[entity->entityType].attack->attackRange;
       for (const auto& cell_pos :
            nearestCells(entity->position, attack_range + 2)) {
         map_[cell_pos.x][cell_pos.y].attack_status =
@@ -74,21 +75,27 @@ void Map::update(const PlayerView& view) {
   }
 }
 
-const map_t<RoutePoint>& Map::routes(const Entity* entity,
-                                     bool rebuild) {
-  //  if (map_ids_.count(entity->id)) return maps_cache_[map_ids_[entity->id]];
-
-  // const int current_id = (int)map_ids_.size();
-  // map_ids_[entity->id] = current_id;
-  // if (map_ids_.size() > maps_cache_.size()) {
+const map_t<RoutePoint>& Map::routes(const Entity* entity, bool rebuild,
+                                     bool ignore_resources) {
+  if (map_buffer_.empty()) {
+    map_buffer_.resize(size);
+    for (auto& row : map_buffer_) row.resize(size);
+  }
+  // if (!cache_index_for_entity_.count(entity->id)) {
+  //  int last_index                      = (int)cache_index_for_entity_.size();
+  //  cache_index_for_entity_[entity->id] = last_index;
   //  maps_cache_.emplace_back();
-  //  maps_cache_.back().resize(map_size);
-  //  for (auto& row : maps_cache_.back()) row.resize(map_size);
+  //  maps_cache_.back().resize(size);
+  //  for (auto& row : maps_cache_.back()) row.resize(size);
+  //  buildMap(maps_cache_.back(), entity, ignore_resources);
+  //} else if (rebuild) {
+  //  buildMap(maps_cache_[cache_index_for_entity_[entity->id]], entity,
+  //           ignore_resources);
   //}
 
-  // buildMap(maps_cache_[map_ids_[entity->id]], entity);
-  // return maps_cache_[map_ids_[entity->id]];
-  return maps_cache_[0];
+  // return maps_cache_[cache_index_for_entity_[entity->id]];
+  buildMap(map_buffer_, entity, ignore_resources);
+  return map_buffer_;
 }
 
 void Map::maybeInit(const PlayerView& view) {
@@ -104,59 +111,77 @@ void Map::maybeInit(const PlayerView& view) {
   map_.back().back().blind_counter = 50;
 }
 
-void Map::buildMap(map_t<RoutePoint>& layer, const Entity* entity) {
-  //{
-  //  const int resource_weight = props[RESOURCE].maxHealth / 5;
-  //  const int kInfinity       = 100000;
-  //  for (auto& row : layer) {
-  //    for (auto& cell : row) cell = RouteDirection();
-  //  }
-  //  layer[entity->position.x][entity->position.y] = {0, 0, 0};
+void Map::buildMap(map_t<RoutePoint>& layer, const Entity* entity,
+                   bool ignore_resources) {
+  for (auto& row : layer) {
+    for (auto& cell : row) cell = RoutePoint();
+  }
 
-  //  auto getNode = [&layer](int x, int y) {
-  //    return PathNode(layer[x][y].distance, x, y,  //
-  //                    layer[x][y].offset_x, layer[x][y].offset_y);
-  //  };
+  std::queue<Vec2Int> nodes_to_see;
+  layer[entity->position.x][entity->position.y] = {0, Vec2Int(0, 0)};
+  nodes_to_see.push(entity->position);
 
-  //  std::set<PathNode> nodes_to_see;
-  //  nodes_to_see.insert(getNode(entity->position.x, entity->position.y));
+  while (!nodes_to_see.empty()) {
+    const auto current = nodes_to_see.front();
+    nodes_to_see.pop();
 
-  //  while (!nodes_to_see.empty()) {
-  //    int score = nodes_to_see.begin()->score;
-  //    int x     = nodes_to_see.begin()->x;
-  //    int y     = nodes_to_see.begin()->y;
-  //    Vec2Int node_offset(nodes_to_see.begin()->offset_x,
-  //                        nodes_to_see.begin()->offset_y);
-  //    nodes_to_see.erase(nodes_to_see.begin());
+    for (const auto& offset :
+         {Vec2Int(-1, 0), Vec2Int(1, 0), Vec2Int(0, -1), Vec2Int(0, 1)}) {
+      Vec2Int new_step(current.x + offset.x, current.y + offset.y);
+      if (isOut(new_step.x, new_step.y)) continue;
 
-  //    for (const auto& offset :
-  //         {Vec2Int(-1, 0), Vec2Int(1, 0), Vec2Int(0, -1), Vec2Int(0, 1)}) {
-  //      Vec2Int n(x + offset.x, y + offset.y);
-  //      if (isOut(n.x, n.y)) continue;
-  //      int bonus = -1;
-  //      if ((!cell(n).blind_counter && !cell(n).entity) ||
-  //          (cell(n).blind_counter && cell(n).last_seen_entity != RESOURCE)) {
-  //        bonus = 1;
-  //      } else if (cell(n).last_seen_entity == RESOURCE) {
-  //        bonus = resource_weight;
-  //      }
+      auto& layer_cell = layer[new_step.x][new_step.y];
+      if (layer_cell.distance != -1) continue;
 
-  //      if (bonus == -1) continue;
-  //      if (score + bonus < layer[n.x][n.y].distance) {
-  //        if (layer[n.x][n.y].distance != kInfinity) {
-  //          auto old_node = getNode(n.x, n.y);
-  //          nodes_to_see.erase(old_node);
-  //        }
-  //        layer[n.x][n.y].distance = score + bonus;
-  //        if (!node_offset.x && !node_offset.y) {
-  //          layer[n.x][n.y].offset_x = offset.x;
-  //          layer[n.x][n.y].offset_y = offset.y;
-  //        } else {
-  //          layer[n.x][n.y].offset_x = node_offset.x;
-  //          layer[n.x][n.y].offset_y = node_offset.y;
-  //        }
-  //        nodes_to_see.insert(getNode(n.x, n.y));
-  //      }
-  //    }
-  //  }
+      const auto& new_cell = cell(new_step);
+      const bool empty_and_visible =
+          !new_cell.blind_counter &&
+          (!new_cell.entity || props()[new_cell.entity->entityType].canMove);
+      if (!empty_and_visible &&
+          !(new_cell.last_seen_entity == RESOURCE && ignore_resources)) {
+        continue;
+      }
+
+      layer_cell.distance   = layer[current.x][current.y].distance + 1;
+      layer_cell.first_step = layer[current.x][current.y].first_step;
+      if (!layer_cell.first_step.x && !layer_cell.first_step.y)
+        layer_cell.first_step = offset;
+      nodes_to_see.push(new_step);
+    }
+  }
+}
+
+std::shared_ptr<MoveAction> Map::moveAction(const Entity* entity,
+                                            Vec2Int position) {
+  Vec2Int new_offset;
+  const auto& routing_map = routes(entity);
+  if (routing_map[position.x][position.y].distance != -1) {
+    new_offset = routing_map[position.x][position.y].first_step;
+  } else {
+    const auto& breakthrough_map = routes(entity, true, true);
+    new_offset = breakthrough_map[position.x][position.y].first_step;
+  }
+
+  if (!new_offset.x && !new_offset.y) {
+    return std::make_shared<MoveAction>(position, true, true);
+  }
+  return std::make_shared<MoveAction>(
+      Vec2Int(entity->position.x + new_offset.x,
+              entity->position.y + new_offset.y),
+      true, true);
+}
+
+Vec2Int Map::leastKnownPosition() {
+  int score = -1;
+  Vec2Int best_result(size / 2, size / 2);
+  for (int i = 0; i < size; ++i) {
+    for (int j = 0; j < size; ++j) {
+      const int blind_counter = cell(i, j).blind_counter;
+      if (blind_counter && (score == -1 || blind_counter >= score)) {
+        score       = blind_counter;
+        best_result = Vec2Int(i, j);
+      }
+    }
+  }
+  return best_result;
 }

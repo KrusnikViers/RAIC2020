@@ -27,8 +27,8 @@ EntityAction FightingPlanner::command(const Entity* entity) {
                         actionAttack(enemy->id), nullptr);
   }
 
-  return EntityAction(actionMove(getLeastKnownPosition(entity), true), nullptr,
-                      nullptr, nullptr);
+  return EntityAction(map().moveAction(entity, map().leastKnownPosition()),
+                      nullptr, nullptr, nullptr);
 }
 
 const Entity* FightingPlanner::getTargetedEnemy(const Entity* unit) {
@@ -48,6 +48,8 @@ const Entity* FightingPlanner::getTargetedEnemy(const Entity* unit) {
       score -= 10;
     else if (enemy->entityType == DRONE)
       score -= 5;
+    else if (enemy->entityType == BARRACKS)
+      score -= 3;
 
     if (!resulting_enemy || (score < best_score)) {
       resulting_enemy = enemy;
@@ -66,7 +68,12 @@ const Entity* FightingPlanner::getNearestEnemy(const Entity* unit) {
   int best_score       = -1;
   for (const auto* enemy : state().enemies) {
     int score = dist(unit->position, enemy->position);
-    if (enemy->entityType == DRONE) score -= 15;
+    score -= map().size - (enemy->position.x + enemy->position.y) / 2;
+
+    if (enemy->entityType == DRONE)
+      score -= 10;
+    else if (enemy->entityType == BARRACKS)
+      score -= 20;
 
     if (best_score == -1 || score < best_score) {
       best_score = score;
@@ -74,19 +81,4 @@ const Entity* FightingPlanner::getNearestEnemy(const Entity* unit) {
     }
   }
   return result;
-}
-
-Vec2Int FightingPlanner::getLeastKnownPosition(const Entity* unit) {
-  int score = -1;
-  Vec2Int best_result(map().size / 2, map().size / 2);
-  for (int i = 0; i < map().size; ++i) {
-    for (int j = 0; j < map().size; ++j) {
-      const int blind_counter = cell(i, j).blind_counter;
-      if (blind_counter && (score == -1 || blind_counter >= score)) {
-        score       = blind_counter;
-        best_result = Vec2Int(i, j);
-      }
-    }
-  }
-  return best_result;
 }

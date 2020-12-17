@@ -1,5 +1,7 @@
 #include "brain/production.h"
 
+#include <iostream>
+
 namespace {
 
 int resource_dispatched = 0;
