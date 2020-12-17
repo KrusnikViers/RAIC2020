@@ -15,8 +15,6 @@ Map& map() { return g_map; }
 void Map::update(const PlayerView& view) {
   maybeInit(view);
 
-  //cache_index_for_entity_.clear();
-
   // Reset map and increase blind counters
   for (auto& row : map_) {
     for (auto& cell : row) {
@@ -75,25 +73,12 @@ void Map::update(const PlayerView& view) {
   }
 }
 
-const map_t<RoutePoint>& Map::routes(const Entity* entity, bool rebuild,
+const map_t<RoutePoint>& Map::routes(const Entity* entity,
                                      bool ignore_resources) {
   if (map_buffer_.empty()) {
     map_buffer_.resize(size);
     for (auto& row : map_buffer_) row.resize(size);
   }
-  // if (!cache_index_for_entity_.count(entity->id)) {
-  //  int last_index                      = (int)cache_index_for_entity_.size();
-  //  cache_index_for_entity_[entity->id] = last_index;
-  //  maps_cache_.emplace_back();
-  //  maps_cache_.back().resize(size);
-  //  for (auto& row : maps_cache_.back()) row.resize(size);
-  //  buildMap(maps_cache_.back(), entity, ignore_resources);
-  //} else if (rebuild) {
-  //  buildMap(maps_cache_[cache_index_for_entity_[entity->id]], entity,
-  //           ignore_resources);
-  //}
-
-  // return maps_cache_[cache_index_for_entity_[entity->id]];
   buildMap(map_buffer_, entity, ignore_resources);
   return map_buffer_;
 }
@@ -158,7 +143,7 @@ std::shared_ptr<MoveAction> Map::moveAction(const Entity* entity,
   if (routing_map[position.x][position.y].distance != -1) {
     new_offset = routing_map[position.x][position.y].first_step;
   } else {
-    const auto& breakthrough_map = routes(entity, true, true);
+    const auto& breakthrough_map = routes(entity, true);
     new_offset = breakthrough_map[position.x][position.y].first_step;
   }
 

@@ -33,7 +33,8 @@ class Map {
   int size;
   MapCell& at(int x, int y) { return map_[x][y]; }
 
-  const map_t<RoutePoint>& routes(const Entity* entity, bool rebuild = false, bool ignore_resources = false);
+  const map_t<RoutePoint>& routes(const Entity* entity,
+                                  bool ignore_resources = false);
 
   std::shared_ptr<MoveAction> moveAction(const Entity* entity,
                                          Vec2Int position);
@@ -47,13 +48,11 @@ class Map {
   }
 
   void maybeInit(const PlayerView& view);
-  void buildMap(map_t<RoutePoint>& layer,
-                const Entity* entity, bool ignore_resources);
+  void buildMap(map_t<RoutePoint>& layer, const Entity* entity,
+                bool ignore_resources);
 
   map_t<MapCell> map_;
   map_t<RoutePoint> map_buffer_;
-  //std::vector<map_t<RoutePoint>> maps_cache_;
-  //std::unordered_map<int, int> cache_index_for_entity_;
 };
 
 // Singleton implementation. For all the methods in planners called, you can
