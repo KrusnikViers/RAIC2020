@@ -16,10 +16,13 @@ void Map::update(const PlayerView& view) {
   maybeInit(view);
 
   // Reset map and increase blind counters
-  for (auto& row : map_) {
-    for (auto& cell : row) {
-      resetCell(cell);
-      ++cell.blind_counter;
+  for (int i = 0; i < size; ++i) {
+    for (int j = 0; j < size; ++j) {
+      resetCell(cell(i, j));
+      if (!((i + 4) % 6) && !((j + 4) % 6))
+        ++cell(i, j).blind_counter;
+      else
+        cell(i, j).blind_counter = 1;
     }
   }
 
@@ -84,6 +87,10 @@ void Map::maybeInit(const PlayerView& view) {
 
   map_.resize(size);
   for (auto& row : map_) row.resize(size);
+
+  map_[2][78].blind_counter  = 10;
+  map_[78][2].blind_counter  = 10;
+  map_[78][78].blind_counter = 10;
 }
 
 std::shared_ptr<MoveAction> Map::moveAction(const Entity* entity,
@@ -96,7 +103,8 @@ Vec2Int Map::leastKnownPosition() {
   Vec2Int best_result(size / 2, size / 2);
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
-      auto new_score = std::make_pair(cell(i, j).blind_counter, std::max(i, j));
+      auto new_score =
+          std::make_pair(cell(i, j).blind_counter, size - std::max(i, j));
       if (new_score > score) {
         score       = new_score;
         best_result = Vec2Int(i, j);
