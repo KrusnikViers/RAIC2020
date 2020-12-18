@@ -95,6 +95,8 @@ void Map::maybeInit(const PlayerView& view) {
 
 std::shared_ptr<MoveAction> Map::moveAction(const Entity* entity,
                                             Vec2Int position) {
+  if (entity->position.x == position.x && entity->position.y == position.y)
+    return nullptr;
   return actionMove(position, true);
 }
 

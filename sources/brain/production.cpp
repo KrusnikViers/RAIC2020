@@ -70,6 +70,9 @@ bool needSupply() {
   if (state().supply_now + state().supply_building >= supply_limit)
     return false;
 
+  // Do not place any homes until barracks are set.
+  if (state().supply_now >= 25 && !state().has(BARRACKS)) return false;
+
   // Better keep saving for rush when current one is built.
   if (state().resource < state().supply_building * 25) return false;
 
