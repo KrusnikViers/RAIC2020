@@ -27,8 +27,8 @@ EntityAction FightingPlanner::command(const Entity* entity) {
                         actionAttack(enemy->id), nullptr);
   }
 
-  return EntityAction(map().moveAction(entity, map().leastKnownPosition()),
-                      nullptr, nullptr, nullptr);
+  return EntityAction(actionMove(map().leastKnownPosition(), true), nullptr,
+                      nullptr, nullptr);
 }
 
 const Entity* FightingPlanner::getTargetedEnemy(const Entity* unit) {
@@ -68,7 +68,7 @@ const Entity* FightingPlanner::getNearestEnemy(const Entity* unit) {
   int best_score       = -1;
   for (const auto* enemy : state().enemies) {
     int score = dist(unit->position, enemy->position);
-    score -= map().size - (enemy->position.x + enemy->position.y) / 2;
+    score -= 2 * (map().size - (enemy->position.x + enemy->position.y) / 2);
 
     if (enemy->entityType == DRONE)
       score -= 10;
