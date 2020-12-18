@@ -7,11 +7,19 @@ namespace {
 int resource_dispatched = 0;
 
 Vec2Int spawnableCell(const Entity* entity) {
+  int score      = -1;
+  Vec2Int result = entity->position;
   for (const auto& point : frameCells(entity, false)) {
-    if (isFree(point.x, point.y) && !cell(point).future_unit_placement)
-      return point;
+    if (isFree(point.x, point.y) && !cell(point).position_taken) {
+      int new_score = point.x + point.y;
+      if (new_score > score) {
+        score  = new_score;
+        result = point;
+      }
+    }
   }
-  return entity->position;
+  cell(result).position_taken = true;
+  return result;
 }
 
 int unitCost(EntityType type) {
@@ -31,9 +39,9 @@ bool needDrone() {
   if (state().my(DRONE).size() >= drones_limit) return false;
 
   // Too few resources left to make more drones.
-  if ((state().supply_now < 60 &&
-       state().visible_resource <
-           state().my(DRONE).size() * 2 * props()[RESOURCE].maxHealth)) {
+  if (state().supply_now < 60 &&
+      state().visible_resource <
+          state().my(DRONE).size() * 4 * props()[RESOURCE].maxHealth) {
     return false;
   }
 
@@ -45,7 +53,7 @@ bool needDrone() {
 
   // If no conditions met, we're done.
   return false;
-}
+}  // namespace
 
 bool needRanged() {
   if (!canMakeUnit(RANGED)) return false;
@@ -63,7 +71,7 @@ bool needSupply() {
     return false;
 
   // Better keep saving for rush when current one is built.
-  if (state().resource < state().supply_building * 30) return false;
+  if (state().resource < state().supply_building * 25) return false;
 
   if (state().supply_now * 0.8 < state().supply_used) return true;
 

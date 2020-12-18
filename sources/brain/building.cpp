@@ -56,7 +56,7 @@ void BuildingPlanner::repair(EntityType type) {
       if (repair_placing.second == -1) break;
       commands_[repair_placing.second] =
           Command(building->position, repair_placing.first, type);
-      cell(repair_placing.first).future_drone_workplace = true;
+      cell(repair_placing.first).position_taken = true;
     }
   }
 }
@@ -72,7 +72,7 @@ void BuildingPlanner::build(EntityType type) {
 
   commands_[build_placing.second] =
       Command(best_place, build_placing.first, type);
-  cell(build_placing.first).future_drone_workplace = true;
+  cell(build_placing.first).position_taken = true;
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
       cell(best_place.x + i, best_place.y + j).attack_status = Threat;
@@ -84,9 +84,9 @@ void BuildingPlanner::run() {
   for (const auto* drone : state().my(DRONE)) {
     if (commands_.count(drone->id)) continue;
     if (cell(drone->position).attack_status != Safe) {
-      Vec2Int new_place = nearestFreePlace(drone->position);
-      cell(new_place).future_drone_workplace = true;
-      commands_[drone->id] = Command(new_place, new_place, DRONE);
+      Vec2Int new_place              = nearestFreePlace(drone->position);
+      cell(new_place).position_taken = true;
+      commands_[drone->id]           = Command(new_place, new_place, DRONE);
     }
   }
 }
@@ -113,9 +113,9 @@ void BuildingPlanner::dig() {
   while (!orders.empty()) {
     const auto& command = orders.top().second;
     if (!commands_.count(command.first) &&
-        !cell(command.second.drone_position).future_drone_workplace) {
-      commands_[command.first] = command.second;
-      cell(command.second.drone_position).future_drone_workplace = true;
+        !cell(command.second.drone_position).position_taken) {
+      commands_[command.first]                           = command.second;
+      cell(command.second.drone_position).position_taken = true;
     }
     orders.pop();
   }
@@ -127,7 +127,7 @@ Vec2Int BuildingPlanner::nearestFreePlace(Vec2Int pos) const {
   for (int i = 0; i < map().size; ++i) {
     for (int j = 0; j < map().size; ++j) {
       const Vec2Int new_pos(i, j);
-      if (!isFree(new_pos.x, new_pos.y) || cell(i, j).future_drone_workplace ||
+      if (!isFree(new_pos.x, new_pos.y) || cell(i, j).position_taken ||
           cell(i, j).attack_status != Safe) {
         continue;
       }
@@ -147,7 +147,7 @@ std::vector<Vec2Int> BuildingPlanner::builderPlacings(
   std::vector<Vec2Int> cells_available;
   for (const auto& cell_pos : free_cells) {
     if (isFree(cell_pos.x, cell_pos.y, AllowDrone) &&
-        !cell(cell_pos).future_drone_workplace &&
+        !cell(cell_pos).position_taken &&
         cell(cell_pos).attack_status == Safe) {
       cells_available.push_back(cell_pos);
     }
@@ -189,7 +189,7 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
         for (int jo = 0; jo < size; ++jo) {
           if (!isFree(i + io, j + jo, AllowDrone) ||
               cell(i + io, j + jo).attack_status != Safe ||
-              cell(i + io, j + jo).future_drone_workplace) {
+              cell(i + io, j + jo).position_taken) {
             safe_space = false;
             break;
           }
@@ -209,7 +209,7 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
         if (!isFree(point.x, point.y, AllowUnit) && !isOut(point.x, point.y)) {
           safe_space = false;
         }
-        if (!isOut(point.x, point.y) && !cell(point).future_drone_workplace) {
+        if (!isOut(point.x, point.y) && !cell(point).position_taken) {
           has_place_for_builder = true;
         }
         const bool now_free = isFree(point.x, point.y, AllowUnit);
@@ -253,8 +253,7 @@ std::vector<std::pair<Vec2Int, Vec2Int>> BuildingPlanner::diggingPlaces()
   for (const auto* resource : state().resources) {
     for (const auto& point : frameCells(resource, false)) {
       if (isFree(point.x, point.y, AllowDrone) &&
-          cell(point).attack_status == Safe &&
-          !cell(point).future_drone_workplace) {
+          cell(point).attack_status == Safe && !cell(point).position_taken) {
         results.push_back(std::make_pair(resource->position, point));
       }
     }

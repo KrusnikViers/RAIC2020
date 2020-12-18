@@ -23,12 +23,12 @@ EntityAction FightingPlanner::command(const Entity* entity) {
 
   enemy = getNearestEnemy(entity);
   if (enemy) {
-    return EntityAction(actionMove(enemy->position, true), nullptr,
+    return EntityAction(map().moveAction(entity, enemy->position), nullptr,
                         actionAttack(enemy->id), nullptr);
   }
 
-  return EntityAction(actionMove(map().leastKnownPosition(), true), nullptr,
-                      nullptr, nullptr);
+  return EntityAction(map().moveAction(entity, map().leastKnownPosition()),
+                      nullptr, nullptr, nullptr);
 }
 
 const Entity* FightingPlanner::getTargetedEnemy(const Entity* unit) {
