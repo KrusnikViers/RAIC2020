@@ -63,6 +63,10 @@ std::shared_ptr<MoveAction> actionMove(Vec2Int position, bool find_nearest) {
   return std::make_shared<MoveAction>(position, find_nearest, true);
 }
 
-std::shared_ptr<AttackAction> actionAttack(int target) {
-  return std::make_shared<AttackAction>(std::make_shared<int>(target), nullptr);
+std::shared_ptr<AttackAction> actionAttack(int target,
+                                           bool autoattack) {
+  return std::make_shared<AttackAction>(
+      std::make_shared<int>(target),
+      autoattack ? std::make_shared<AutoAttack>(6, std::vector<EntityType>())
+                 : nullptr);
 }

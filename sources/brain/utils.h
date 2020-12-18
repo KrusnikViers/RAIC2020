@@ -34,4 +34,4 @@ inline int sign(T val) {
 
 const EntityAction kNoAction = EntityAction(nullptr, nullptr, nullptr, nullptr);
 std::shared_ptr<MoveAction> actionMove(Vec2Int position, bool find_nearest);
-std::shared_ptr<AttackAction> actionAttack(int target);
+std::shared_ptr<AttackAction> actionAttack(int target, bool autoattack = false);

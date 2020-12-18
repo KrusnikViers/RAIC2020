@@ -13,6 +13,9 @@ class FightingPlanner {
   EntityAction command(const Entity* entity);
 
  private:
+  enum TacticsDecision { Advance, Hold, Retreat };
+
+  TacticsDecision estimate(const Entity* unit, Vec2Int* next_position);
   const Entity* getTargetedEnemy(const Entity* unit);
   const Entity* getNearestEnemy(const Entity* unit);
 };
