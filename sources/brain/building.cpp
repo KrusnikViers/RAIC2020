@@ -50,7 +50,7 @@ void BuildingPlanner::repair(EntityType type) {
   const int size = props()[type].size;
   for (const auto* building : state().my(type)) {
     if (building->health == props()[type].maxHealth) continue;
-    int repair_drones = (size + 1) / 2 + 1;
+    int repair_drones = (size == 3 ? 3 : 6);
     for (int i = 0; i < repair_drones; ++i) {
       const auto repair_placing = droneForBuilding(building->position, type);
       if (repair_placing.second == -1) break;
@@ -180,11 +180,9 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
   Vec2Int best_result(-1, -1);
   const int size = props().at(type).size;
 
-  for (int i = 0; i < map().size - size; i += 4) {
-    for (int j = 0; j < map().size - size; j += 4) {
-      // for (int i = 0; i < map().size - size; ++i) {
-      //  for (int j = 0; j < map().size - size; ++j) {
-      //    if (size == 3 && (i % 4 || j % 4)) continue;
+  for (int i = 0; i < map().size - size; ++i) {
+    for (int j = 0; j < map().size - size; ++j) {
+      if (size == 3 && (i % 4 || j % 4)) continue;
       Vec2Int cpos(i, j);
       // Whole space should be safe and free or contain only worker drones.
       bool safe_space = true;

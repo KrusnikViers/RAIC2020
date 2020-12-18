@@ -79,9 +79,7 @@ const Entity* FightingPlanner::getNearestEnemy(const Entity* unit) {
   int best_score       = -1;
   for (const auto* enemy : state().enemies) {
     int score = dist(unit->position, enemy->position);
-    int proximity = (enemy->position.x + enemy->position.y) / 2;
-    if (proximity < 50)
-    score -= 50 - proximity;
+    score -= 2 * (map().size - (enemy->position.x + enemy->position.y) / 2);
 
     if (enemy->entityType == DRONE)
       score -= 10;
@@ -111,7 +109,7 @@ FightingPlanner::TacticsDecision FightingPlanner::estimate(
   for (const Entity* enemy : state().enemies) {
     if ((enemy->entityType == RANGED || enemy->entityType == MELEE ||
          enemy->entityType == TURRET) &&
-        dist(enemy->position, unit->position) < 20) {
+        dist(enemy->position, unit->position) < 10) {
       direct_enemies.push_back(enemy);
       float proximity = 1.f / dist(enemy->position, unit->position);
       enemy_direction.x +=
@@ -128,7 +126,7 @@ FightingPlanner::TacticsDecision FightingPlanner::estimate(
 
   const Entity* most_distant_ally = nullptr;
   for (const Entity* ally : state().my(RANGED)) {
-    if (dist(ally->position, unit->position) > 20) continue;
+    // if (dist(ally->position, unit->position) > 20) continue;
     direct_allies.push(
         std::make_pair(dist(ally->position, unit->position), ally));
     if (!most_distant_ally ||
@@ -159,8 +157,7 @@ FightingPlanner::TacticsDecision FightingPlanner::estimate(
   }
   ally_proximity /= ally_number;
 
-  if (enemy_proximity * 0.75 > ally_proximity ||
-      direct_enemies.size() > direct_allies.size() * 1.3) {
+  if (enemy_proximity * 0.75 > ally_proximity) {
     return Retreat;
   } else {
     *next_position = unit->position;
