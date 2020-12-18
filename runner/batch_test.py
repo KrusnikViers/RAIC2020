@@ -29,10 +29,10 @@ for i in range(0, RUNS_COUNT):
                                "--batch-mode",
                                "--save-results", OUTPUT_FILE])
     time.sleep(0.5)
-    subprocess.Popen(["aicup2020.exe", "localhost",
+    subprocess.Popen(["..\\out\\Release\\aicup2020.exe", "localhost",
                       "3100{}".format(client_to_pos[0] + 1)],
                      stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-    subprocess.Popen(["aicup2020.exe", "localhost",
+    subprocess.Popen(["..\\out\\Release\\aicup2020.exe", "localhost",
                       "3100{}".format(client_to_pos[1] + 1)],
                      stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     subprocess.Popen(["latest_sent.exe", "localhost",

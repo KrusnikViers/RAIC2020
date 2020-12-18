@@ -182,6 +182,9 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
 
   for (int i = 0; i < map().size - size; i += 4) {
     for (int j = 0; j < map().size - size; j += 4) {
+      // for (int i = 0; i < map().size - size; ++i) {
+      //  for (int j = 0; j < map().size - size; ++j) {
+      //    if (size == 3 && (i % 4 || j % 4)) continue;
       Vec2Int cpos(i, j);
       // Whole space should be safe and free or contain only worker drones.
       bool safe_space = true;

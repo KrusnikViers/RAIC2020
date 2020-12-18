@@ -69,4 +69,17 @@ void State::updateEntities(const PlayerView& view) {
       }
     }
   }
+  for (const auto* worker : my(DRONE)) {
+    for (const auto* enemy : enemies) {
+      if (enemy->entityType == RANGED || enemy->entityType == MELEE ||
+          enemy->entityType == TURRET) {
+        if (dist(enemy->position, worker->position) < attack_radius + 2) {
+          if (threatening_workers.count(enemy->id))
+            ++threatening_workers[enemy->id];
+          else
+            threatening_workers[enemy->id] = 1;
+        }
+      }
+    }
+  }
 }

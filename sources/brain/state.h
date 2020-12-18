@@ -43,6 +43,7 @@ class State {
 
   std::unordered_map<int, std::vector<const Entity*>> targeted;
   std::unordered_map<int, int> planned_damage;
+  std::unordered_map<int, int> threatening_workers;
 
  private:
   void maybeInit(const PlayerView& view);
