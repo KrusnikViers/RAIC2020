@@ -11,6 +11,7 @@ void BuildingPlanner::update() {
   for (EntityType type : {BASE, BARRACKS, SUPPLY})
     if (state().production_queue.count(type)) build(type);
   run();
+  repairFriends();
   dig();
 }
 
@@ -18,9 +19,14 @@ EntityAction BuildingPlanner::command(const Entity* entity) {
   if (commands_.count(entity->id)) {
     const Command& command = commands_[entity->id];
     const Entity* target   = cell(command.target_position).entity;
-    if (command.target_type == RESOURCE) {
+    if (command.target_type == RESOURCE || (target && !state().mine(target))) {
       return EntityAction(map().moveAction(entity, command.drone_position),
                           nullptr, actionAttack(target->id), nullptr);
+    } else if (target && state().mine(target) &&
+               command.target_type == target->entityType &&
+               dist(target->position, entity->position) == 1) {
+      return EntityAction(nullptr, nullptr, nullptr,
+                          std::make_shared<RepairAction>(target->id));
     } else if (command.target_type == DRONE) {
       return EntityAction(map().moveAction(entity, command.drone_position),
                           nullptr, nullptr, nullptr);
@@ -61,6 +67,24 @@ void BuildingPlanner::repair(EntityType type) {
   }
 }
 
+void BuildingPlanner::repairFriends() {
+  for (const auto* drone : state().my(DRONE)) {
+    if (commands_.count(drone->id)) continue;
+    for (const auto& unit_pair : state().all) {
+      if (unit_pair.first == drone->id || !state().mine(unit_pair.second))
+        continue;
+      if (dist(unit_pair.second->position, drone->position) != 1) continue;
+      if (unit_pair.second->health ==
+          props()[unit_pair.second->entityType].maxHealth)
+        continue;
+      commands_[drone->id] =
+          Command(unit_pair.second->position, drone->position,
+                  unit_pair.second->entityType);
+      break;
+    }
+  }
+}
+
 void BuildingPlanner::build(EntityType type) {
   if (state().resource < props()[type].initialCost) return;
   Vec2Int best_place = nearestFreePlacing(type);
@@ -97,6 +121,24 @@ void BuildingPlanner::dig() {
   std::priority_queue<queue_contents, std::vector<queue_contents>,
                       std::greater<queue_contents>>
       orders;
+
+  for (const auto* drone : state().my(DRONE)) {
+    if (commands_.count(drone->id)) continue;
+    for (const auto* enemy : state().enemies) {
+      if (commands_.count(drone->id)) break;
+      if (dist(drone->position, enemy->position) < 6) {
+        for (const auto& point : frameCells(enemy, false)) {
+          if (isFree(point.x, point.y, AllowDrone) &&
+              cell(point).attack_status == Safe &&
+              !cell(point).position_taken) {
+            commands_[drone->id] =
+                Command(enemy->position, point, enemy->entityType);
+            break;
+          }
+        }
+      }
+    }
+  }
 
   const auto digging_places = diggingPlaces();
   for (const auto* drone : state().my(DRONE)) {

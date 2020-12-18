@@ -51,10 +51,12 @@ void Map::update(const PlayerView& view) {
       }
     } else {
       // Attack status
-      if (!props().at(entity->entityType).attack) continue;
+      if (entity->entityType != RANGED && entity->entityType != MELEE &&
+          entity->entityType != TURRET)
+        continue;
       const int attack_range = props()[entity->entityType].attack->attackRange;
       for (const auto& cell_pos :
-           nearestCells(entity->position, attack_range + 2)) {
+           nearestCells(entity->position, attack_range + 3)) {
         map_[cell_pos.x][cell_pos.y].attack_status =
             dist(cell_pos, entity->position) <= attack_range ? Attack : Threat;
         if (map_[cell_pos.x][cell_pos.y].blind_counter)

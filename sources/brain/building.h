@@ -35,6 +35,7 @@ class BuildingPlanner {
 
   void repair();
   void repair(EntityType type);
+  void repairFriends();
   void build(EntityType type);
   void run();
   void dig();
