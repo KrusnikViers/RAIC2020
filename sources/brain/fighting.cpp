@@ -12,7 +12,9 @@ int hpRemains(const Entity* enemy) {
 
 }  // namespace
 
-void FightingPlanner::update() {}
+void FightingPlanner::update() {
+  std::cout << "------------------" << std::endl;
+}
 
 EntityAction FightingPlanner::command(const Entity* entity) {
   const Entity* enemy = getTargetedEnemy(entity);
@@ -102,7 +104,7 @@ Vec2Int FightingPlanner::tacticalPosition(const Entity* unit) {
   for (const Entity* enemy : state().enemies) {
     if (enemy->entityType == RANGED || enemy->entityType == MELEE ||
         enemy->entityType == TURRET) {
-      if (dist(unit->position, enemy->position) <= 7) {
+      if (dist(unit->position, enemy->position) <= 9) {
         enemy_health += enemy->health;
         enemy_attack += props()[enemy->entityType].attack->damage;
         enemies.push_back(enemy);
@@ -113,7 +115,7 @@ Vec2Int FightingPlanner::tacticalPosition(const Entity* unit) {
 
   for (const Entity* ally : state().my(RANGED)) {
     for (const auto* enemy : enemies) {
-      if (dist(ally->position, enemy->position) <= 7) {
+      if (dist(ally->position, enemy->position) <= 9) {
         allies.push_back(ally);
         ally_health += ally->health;
         ally_attack += props()[RANGED].attack->damage;
@@ -121,61 +123,64 @@ Vec2Int FightingPlanner::tacticalPosition(const Entity* unit) {
     }
   }
 
-  bool should_advance = (double)ally_health / (double)enemy_attack >=
-                        (double)enemy_health / (double)ally_attack;
-  if (std::max(unit->position.x, unit->position.y) < 30) should_advance = true;
-  auto distance_score = [&](Vec2Int my_position) {
-    double score    = 0;
-    int my_distance = -1;
-    for (const auto* ally : allies) {
-      int closest_distance = -1;
-      for (const auto* enemy : enemies) {
-        int distance = dist(ally->position, enemy->position);
-        if (closest_distance == -1 || distance < closest_distance)
-          closest_distance = distance;
-      }
-      score += closest_distance;
+  double turns_to_kill_enemies = (double)enemy_health / (double)ally_attack;
+  double turns_to_kill_allies  = (double)ally_health / (double)enemy_attack;
+  int moving_direction =
+      turns_to_kill_allies >= turns_to_kill_enemies
+    ? 1 : -1;
+          //? std::max(1l, lround(turns_to_kill_allies / turns_to_kill_enemies))
+          //: -lround(turns_to_kill_enemies / turns_to_kill_allies);
+  double allies_distance = 0;
+  int my_distance        = -1;
+  for (const auto* ally : allies) {
+    int closest_distance = -1;
+    for (const auto* enemy : enemies) {
+      int distance = dist(ally->position, enemy->position);
+      if (closest_distance == -1 || distance < closest_distance)
+        closest_distance = distance;
     }
+    allies_distance += closest_distance;
+  }
+  allies_distance /= allies.size();
+
+  std::cout << "Enemy " << turns_to_kill_allies << " (" << enemies.size()
+            << ") vs ally " << turns_to_kill_enemies << " (" << allies.size()
+            << "), direction: " << moving_direction << std::endl;
+
+  auto distance_score = [&](Vec2Int my_position) {
+    int my_distance = -1;
 
     for (const auto* enemy : enemies) {
       int distance = dist(my_position, enemy->position);
       if (my_distance == -1 || distance < my_distance) my_distance = distance;
     }
 
-    return std::make_pair(score / allies.size(), my_distance);
+    return my_distance;
   };
 
-  if (should_advance) {
-    result            = unit->position;
-    auto score        = distance_score(unit->position);
-    double best_score = std::abs(score.first - 0.6 - score.second);
-    for (const auto& pos : frameCells(unit, false)) {
-      if (isFree(pos.x, pos.y) && !cell(pos).position_taken) {
-        score                = distance_score(pos);
-        double current_score = std::abs(score.first - 1 - score.second);
-        if (current_score < best_score) {
-          result     = pos;
-          best_score = current_score;
-        }
+  result     = unit->position;
+  auto score = distance_score(unit->position);
+  std::cout << "Unit distance score: " << score << std::endl;
+  auto best_score =
+      std::make_pair(std::abs(allies_distance - moving_direction - score), 0);
+  for (const auto& pos :
+       nearestCells(unit->position.x, unit->position.y, 5)) {
+    if (isFree(pos.x, pos.y, AllowUnit) && !cell(pos).position_taken) {
+      score = distance_score(pos);
+      auto current_score =
+          std::make_pair(std::abs(allies_distance - moving_direction - score),
+                         dist(pos, unit->position));
+      if (current_score < best_score) {
+        result     = pos;
+        best_score = current_score;
       }
     }
-    cell(result).position_taken = true;
-  } else {
-    result            = unit->position;
-    auto score        = distance_score(unit->position);
-    double best_score = std::abs(score.first + 1 - score.second);
-    for (const auto& pos : frameCells(unit, false)) {
-      if (isFree(pos.x, pos.y) && !cell(pos).position_taken) {
-        score                = distance_score(pos);
-        double current_score = std::abs(score.first + 1 - score.second);
-        if (current_score < best_score) {
-          result     = pos;
-          best_score = current_score;
-        }
-      }
-    }
-    cell(result).position_taken = true;
   }
+  std::cout << "Unit moving from " << unit->position.x << "x"
+            << unit->position.y << " to " << result.x << "x" << result.y
+            << ", new score: " << best_score.first << std::endl
+            << std::endl;
+  cell(result).position_taken = true;
 
   return result;
 }
