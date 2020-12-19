@@ -145,8 +145,8 @@ void BuildingPlanner::dig() {
     if (commands_.count(drone->id)) continue;
     for (const auto& place : digging_places) {
       orders.push(std::make_pair(
-          std::max(place.first.x, place.first.y) / 4 +
-              dist(drone->position, place.second),
+          std::max(place.first.x, place.first.y) +
+              dist(drone->position, place.second) * 4,
           std::make_pair(drone->id,
                          Command(place.first, place.second, RESOURCE))));
     }
@@ -225,6 +225,7 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
   for (int i = 0; i < map().size - size; ++i) {
     for (int j = 0; j < map().size - size; ++j) {
       if (size == 3 && (i % 4 || j % 4)) continue;
+
       Vec2Int cpos(i, j);
       // Whole space should be safe and free or contain only worker drones.
       bool safe_space = true;
@@ -261,12 +262,7 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
           prev_free = now_free;
         }
       }
-      if (size < 4) {
-        if (changes > 2) continue;
-        if (changes == 0 && !prev_free) continue;
-      } else {
-        if (!safe_space) continue;
-      }
+      if (size == 5 && changes > 2) continue;
       if (!has_place_for_builder) continue;
 
       int drone_score = -1;
@@ -279,7 +275,7 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
 
       // We don't actually have any free drones, in this case.
       if (drone_score == -1) return best_result;
-      int score = dist(cpos, Vec2Int(0, 0)) / 4 + drone_score;
+      int score = dist(cpos, Vec2Int(0, 0)) + drone_score * 4;
       if (best_score == -1 || score < best_score) {
         best_score  = score;
         best_result = cpos;
