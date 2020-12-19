@@ -262,7 +262,7 @@ Vec2Int BuildingPlanner::nearestFreePlacing(EntityType type) const {
           prev_free = now_free;
         }
       }
-      if (size == 5 && changes > 2) continue;
+      if (changes > 2) continue;
       if (!has_place_for_builder) continue;
 
       int drone_score = -1;

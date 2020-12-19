@@ -12,9 +12,7 @@ int hpRemains(const Entity* enemy) {
 
 }  // namespace
 
-void FightingPlanner::update() {
-  std::cout << "------------------" << std::endl;
-}
+void FightingPlanner::update() {}
 
 EntityAction FightingPlanner::command(const Entity* entity) {
   const Entity* enemy = getTargetedEnemy(entity);
@@ -54,10 +52,6 @@ const Entity* FightingPlanner::getTargetedEnemy(const Entity* unit) {
       score -= 20;
     else if (enemy->entityType == MELEE)
       score -= 10;
-    else if (enemy->entityType == DRONE)
-      score -= 5;
-    else if (enemy->entityType == BARRACKS)
-      score -= 3;
 
     if (!resulting_enemy || (score < best_score)) {
       resulting_enemy = enemy;
@@ -82,6 +76,8 @@ const Entity* FightingPlanner::getNearestEnemy(const Entity* unit) {
       score -= 10;
     else if (enemy->entityType == BARRACKS)
       score -= 20;
+    else if (!props()[enemy->entityType].canMove)
+      score -= 10;
     if (state().threatening_workers.count(enemy->id))
       score -= 2 * state().threatening_workers[enemy->id];
 
@@ -104,7 +100,7 @@ Vec2Int FightingPlanner::tacticalPosition(const Entity* unit) {
   for (const Entity* enemy : state().enemies) {
     if (enemy->entityType == RANGED || enemy->entityType == MELEE ||
         enemy->entityType == TURRET) {
-      if (dist(unit->position, enemy->position) <= 9) {
+      if (dist(unit->position, enemy->position) <= 10) {
         enemy_health += enemy->health;
         enemy_attack += props()[enemy->entityType].attack->damage;
         enemies.push_back(enemy);
@@ -115,10 +111,11 @@ Vec2Int FightingPlanner::tacticalPosition(const Entity* unit) {
 
   for (const Entity* ally : state().my(RANGED)) {
     for (const auto* enemy : enemies) {
-      if (dist(ally->position, enemy->position) <= 9) {
+      if (dist(ally->position, enemy->position) <= 10) {
         allies.push_back(ally);
         ally_health += ally->health;
         ally_attack += props()[RANGED].attack->damage;
+        break;
       }
     }
   }
@@ -127,9 +124,8 @@ Vec2Int FightingPlanner::tacticalPosition(const Entity* unit) {
   double turns_to_kill_allies  = (double)ally_health / (double)enemy_attack;
   int moving_direction =
       turns_to_kill_allies >= turns_to_kill_enemies
-    ? 1 : -1;
-          //? std::max(1l, lround(turns_to_kill_allies / turns_to_kill_enemies))
-          //: -lround(turns_to_kill_enemies / turns_to_kill_allies);
+          ? lround(turns_to_kill_allies / (turns_to_kill_enemies))
+          : -lround(turns_to_kill_enemies / turns_to_kill_allies);
   double allies_distance = 0;
   int my_distance        = -1;
   for (const auto* ally : allies) {
@@ -142,10 +138,7 @@ Vec2Int FightingPlanner::tacticalPosition(const Entity* unit) {
     allies_distance += closest_distance;
   }
   allies_distance /= allies.size();
-
-  std::cout << "Enemy " << turns_to_kill_allies << " (" << enemies.size()
-            << ") vs ally " << turns_to_kill_enemies << " (" << allies.size()
-            << "), direction: " << moving_direction << std::endl;
+  // allies_distance = std::min(allies_distance, 6.0);
 
   auto distance_score = [&](Vec2Int my_position) {
     int my_distance = -1;
@@ -160,11 +153,9 @@ Vec2Int FightingPlanner::tacticalPosition(const Entity* unit) {
 
   result     = unit->position;
   auto score = distance_score(unit->position);
-  std::cout << "Unit distance score: " << score << std::endl;
   auto best_score =
       std::make_pair(std::abs(allies_distance - moving_direction - score), 0);
-  for (const auto& pos :
-       nearestCells(unit->position.x, unit->position.y, 5)) {
+  for (const auto& pos : nearestCells(unit->position.x, unit->position.y, 3)) {
     if (isFree(pos.x, pos.y, AllowUnit) && !cell(pos).position_taken) {
       score = distance_score(pos);
       auto current_score =
@@ -176,10 +167,6 @@ Vec2Int FightingPlanner::tacticalPosition(const Entity* unit) {
       }
     }
   }
-  std::cout << "Unit moving from " << unit->position.x << "x"
-            << unit->position.y << " to " << result.x << "x" << result.y
-            << ", new score: " << best_score.first << std::endl
-            << std::endl;
   cell(result).position_taken = true;
 
   return result;

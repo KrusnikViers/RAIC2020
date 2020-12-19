@@ -107,6 +107,9 @@ Vec2Int Map::leastKnownPosition() {
     for (int j = 0; j < size; ++j) {
       auto new_score =
           std::make_pair(cell(i, j).blind_counter, size - std::max(i, j));
+      if (cell(i, j).blind_counter && cell(i, j).last_seen_entity != RESOURCE &&
+          cell(i, j).last_seen_entity != NONE)
+        new_score.first += 200;
       if (new_score > score) {
         score       = new_score;
         best_result = Vec2Int(i, j);
