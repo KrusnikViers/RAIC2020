@@ -42,8 +42,9 @@ EntityAction BuildingPlanner::command(const Entity* entity) {
     }
   }
 
-  return EntityAction(map().moveAction(entity, map().leastKnownPosition()),
-                      nullptr, nullptr, nullptr);
+  return EntityAction(
+      map().moveAction(entity, map().leastKnownPosition(entity)), nullptr,
+      nullptr, nullptr);
 }
 
 void BuildingPlanner::repair() {

@@ -14,7 +14,7 @@ struct MapCell {
   bool position_taken = false;
   CellAttackStatus attack_status;
 
-  int blind_counter = -1;
+  int blind_counter = 1;
 };
 
 template <class T>
@@ -29,7 +29,7 @@ class Map {
 
   std::shared_ptr<MoveAction> moveAction(const Entity* entity,
                                          Vec2Int position);
-  Vec2Int leastKnownPosition();
+  Vec2Int leastKnownPosition(const Entity* entity);
 
  private:
   void resetCell(MapCell& cell) {

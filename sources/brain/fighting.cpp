@@ -33,8 +33,9 @@ EntityAction FightingPlanner::command(const Entity* entity) {
                         actionAttack(enemy->id, true), nullptr);
   }
 
-  return EntityAction(map().moveAction(entity, map().leastKnownPosition()),
-                      nullptr, nullptr, nullptr);
+  return EntityAction(
+      map().moveAction(entity, map().leastKnownPosition(entity)), nullptr,
+      nullptr, nullptr);
 }
 
 const Entity* FightingPlanner::getTargetedEnemy(const Entity* unit) {

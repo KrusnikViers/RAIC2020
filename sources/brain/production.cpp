@@ -35,11 +35,11 @@ bool canMakeUnit(EntityType type) {
 bool needDrone() {
   if (!canMakeUnit(DRONE)) return false;
 
-  static const int drones_limit = lround(map().size * 0.75);
+  static const int drones_limit = 55;
   if (state().my(DRONE).size() >= drones_limit) return false;
 
   // Too few resources left to make more drones.
-  if (state().supply_now < 60 &&
+  if (state().supply_now > 80 &&
       state().visible_resource <
           state().my(DRONE).size() * 4 * props()[RESOURCE].maxHealth) {
     return false;

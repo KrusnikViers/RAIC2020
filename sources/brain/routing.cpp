@@ -19,10 +19,7 @@ void Map::update(const PlayerView& view) {
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
       resetCell(cell(i, j));
-      if (!((i + 4) % 6) && !((j + 4) % 6))
-        ++cell(i, j).blind_counter;
-      else
-        cell(i, j).blind_counter = 1;
+      ++cell(i, j).blind_counter;
     }
   }
 
@@ -88,9 +85,9 @@ void Map::maybeInit(const PlayerView& view) {
   map_.resize(size);
   for (auto& row : map_) row.resize(size);
 
-  map_[2][78].blind_counter  = 10;
-  map_[78][2].blind_counter  = 10;
-  map_[78][78].blind_counter = 10;
+  map_[2][78].blind_counter  = 100;
+  map_[78][2].blind_counter  = 100;
+  map_[78][78].blind_counter = 100;
 }
 
 std::shared_ptr<MoveAction> Map::moveAction(const Entity* entity,
@@ -100,13 +97,14 @@ std::shared_ptr<MoveAction> Map::moveAction(const Entity* entity,
   return actionMove(position, true);
 }
 
-Vec2Int Map::leastKnownPosition() {
+Vec2Int Map::leastKnownPosition(const Entity* entity) {
   std::pair<int, int> score(-1, 0);
   Vec2Int best_result(size / 2, size / 2);
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
       auto new_score =
-          std::make_pair(cell(i, j).blind_counter, size - std::max(i, j));
+          std::make_pair(cell(i, j).blind_counter,
+                         2 * size - dist(entity->position, Vec2Int(i, j)));
       if (cell(i, j).blind_counter && cell(i, j).last_seen_entity != RESOURCE &&
           cell(i, j).last_seen_entity != NONE)
         new_score.first += 200;
